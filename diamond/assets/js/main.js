@@ -106,6 +106,12 @@
     if (!hasGSAP || REDUCED) { closeIntro(); return; }
 
     document.body.classList.add('is-locked');
+
+    /* Rede de segurança: a abertura só sai da tela quando a timeline termina.
+       Se o navegador pausar a animação (aba em segundo plano, economia de
+       bateria, GSAP a meio carregar), o visitante ficaria preso numa tela
+       preta achando que o site não carrega. Passados 6s, abre de qualquer jeito. */
+    setTimeout(closeIntro, 6000);
     var tl = gsap.timeline({ onComplete: function () { setTimeout(closeIntro, 420); } });
 
     gsap.set(paths, {
@@ -872,8 +878,14 @@
       ScrollTrigger.refresh();
       window.addEventListener('load', function () { ScrollTrigger.refresh(); });
     }
-    if (location.hash && location.hash !== '#inicio') { if (intro) closeIntro(); }
-    else runIntro();
+    try {
+      if (location.hash && location.hash !== '#inicio') { if (intro) closeIntro(); }
+      else runIntro();
+    } catch (e) {
+      // nenhuma falha de animação pode impedir o acesso ao site
+      console.warn('[Diamond] abertura falhou, seguindo direto:', e);
+      closeIntro();
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
