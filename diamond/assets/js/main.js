@@ -8,7 +8,12 @@
   var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var MOBILE  = window.matchMedia('(max-width: 760px)').matches;
   var hasGSAP = typeof window.gsap !== 'undefined';
-  if (hasGSAP && window.ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
+  if (hasGSAP && window.ScrollTrigger) {
+    gsap.registerPlugin(ScrollTrigger);
+    /* a barra de endereço do navegador móvel muda a altura da viewport ao rolar:
+       sem isto o ScrollTrigger recalcula tudo e a página "pula" durante o arrasto */
+    ScrollTrigger.config({ ignoreMobileResize: true, autoRefreshEvents: 'visibilitychange,DOMContentLoaded,load' });
+  }
 
   /* ------------------------------------------------------------------
      1. GEOMETRIA DO DIAMANTE — 12 facetas independentes
@@ -159,7 +164,7 @@
         start: 'top bottom',
         endTrigger: end,
         end: 'bottom center',
-        scrub: 1.1,
+        scrub: MOBILE ? 0.35 : 1.1,
         invalidateOnRefresh: true
       }
     });
@@ -194,34 +199,44 @@
       stagger: { each: 0.01, from: 'edges' }
     }, 0.62);
 
-    /* --- presença do palco por seção --- */
-    function stageAt(sel, vars, startAt, endAt) {
-      var el = document.querySelector(sel);
-      if (!el) return;
-      gsap.to(stage, Object.assign({
-        scrollTrigger: {
-          trigger: el,
-          start: startAt || 'top 80%',
-          end: endAt || 'bottom 20%',
-          scrub: 1,
-          invalidateOnRefresh: true
-        },
-        ease: 'none'
-      }, vars));
+    /* --- presença do palco por seção ---
+       Cada fase declara explicitamente o valor de entrada e o de saída e escreve
+       direto no elemento. Tweens scrubbed concorrentes na mesma propriedade
+       disputavam o controle e deixavam o diamante forte demais sobre o texto. */
+    var M = MOBILE;
+    var PHASES = [
+      { sel:'#inicio',    s:'top top',       e:'bottom 30%',   o:[M?0.50:0.62, M?0.03:0.07], k:[1,    0.62] },
+      { sel:'#manifesto', s:'top 40%',       e:'center center',o:[M?0.03:0.07, M?0.40:0.64], k:[0.62, 0.88] },
+      { sel:'#manifesto', s:'center center', e:'bottom 20%',   o:[M?0.40:0.64, M?0.03:0.06], k:[0.88, 0.60] },
+      { sel:'#agendar',   s:'top 60%',       e:'bottom 50%',   o:[M?0.03:0.06, M?0.07:0.16], k:[0.60, 0.74] },
+      { sel:'#contato',   s:'top 70%',       e:'center 60%',   o:[M?0.07:0.16, M?0.18:0.30], k:[0.74, 0.68] }
+    ];
+    gsap.set(stage, { opacity: PHASES[0].o[0], scale: PHASES[0].k[0], yPercent: 0 });
+
+    function apply(p, t) {
+      gsap.set(stage, {
+        opacity: p.o[0] + (p.o[1] - p.o[0]) * t,
+        scale:   p.k[0] + (p.k[1] - p.k[0]) * t
+      });
     }
-    gsap.set(stage, { opacity: 0.62, scale: 1, yPercent: 0 });
-    stageAt('#inicio',    { opacity: 0.09, scale: 0.6, yPercent: -3 }, 'top top', 'bottom 30%');
-    stageAt('#manifesto', { opacity: 0.5,  scale: 0.84 }, 'top 30%', 'center center');
-    stageAt('#manifesto', { opacity: 0.07, scale: 0.6  }, 'center center', 'bottom 25%');
-    stageAt('#agendar',   { opacity: 0.16, scale: 0.72 }, 'top 55%', 'bottom 45%');
-    stageAt('#contato',   { opacity: 0.3,  scale: 0.68 }, 'top 65%', 'center 60%');
+    PHASES.forEach(function (p) {
+      var el = document.querySelector(p.sel);
+      if (!el) return;
+      ScrollTrigger.create({
+        trigger: el, start: p.s, end: p.e,
+        invalidateOnRefresh: true,
+        onUpdate: function (self) { apply(p, self.progress); },
+        onLeave: function () { apply(p, 1); },
+        onLeaveBack: function () { apply(p, 0); }
+      });
+    });
 
     /* rotação lenta do conjunto, ligada ao scroll */
     gsap.to('#stageGroup', {
       rotation: MOBILE ? 4 : 9,
       transformOrigin: '50% 45%',
       ease: 'none',
-      scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: 2 }
+      scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: MOBILE ? 0.6 : 2 }
     });
   }
 
@@ -409,16 +424,20 @@
 
   function onScroll() {
     var y = window.scrollY || window.pageYOffset;
-    nav.classList.toggle('is-stuck', y > 40);
-    if (!drawer.classList.contains('is-open')) {
-      nav.classList.toggle('is-hidden', y > lastY && y > 420);
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    /* durante o efeito elástico (topo/fim) o navegador reporta valores fora da faixa:
+       sem este corte a barra ficava piscando ao arrastar */
+    var yc = Math.max(0, Math.min(y, max));
+    nav.classList.toggle('is-stuck', yc > 40);
+    var delta = yc - lastY;
+    if (!drawer.classList.contains('is-open') && Math.abs(delta) > 6) {
+      nav.classList.toggle('is-hidden', delta > 0 && yc > 420);
     }
-    lastY = y;
+    if (Math.abs(delta) > 2) lastY = yc;
     var p = document.getElementById('progress');
-    var h = document.documentElement.scrollHeight - window.innerHeight;
-    if (p) p.style.transform = 'scaleX(' + (h > 0 ? Math.min(y / h, 1) : 0) + ')';
+    if (p) p.style.transform = 'scaleX(' + (max > 0 ? yc / max : 0) + ')';
     var wa = document.getElementById('waFloat');
-    if (wa) wa.classList.toggle('is-in', y > 600);
+    if (wa) wa.classList.toggle('is-in', yc > 600);
   }
   window.addEventListener('scroll', onScroll, { passive: true });
 
@@ -466,19 +485,23 @@
     }
     els.forEach(function (el) {
       var k = el.dataset.rv, from = { opacity: 0, y: 42 };
-      if (k === 'fade-r') from = { opacity: 0, x: -46 };
-      if (k === 'fade-l') from = { opacity: 0, x: 46 };
+      if (!MOBILE) {
+        if (k === 'fade-r') from = { opacity: 0, x: -46 };
+        if (k === 'fade-l') from = { opacity: 0, x: 46 };
+      } else {
+        from = { opacity: 0, y: 28 };
+      }
       gsap.fromTo(el, from, {
         opacity: 1, x: 0, y: 0, duration: 1.05, ease: 'power3.out',
         scrollTrigger: { trigger: el, start: 'top 88%', once: true }
       });
     });
 
-    document.querySelectorAll('[data-parallax]').forEach(function (el) {
+    if (!MOBILE) document.querySelectorAll('[data-parallax]').forEach(function (el) {
       var amt = parseFloat(el.dataset.parallax) || 0.08;
       gsap.fromTo(el.querySelector('img') || el, { yPercent: -amt * 100 }, {
         yPercent: amt * 100, ease: 'none',
-        scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: 1 }
+        scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: MOBILE ? 0.3 : 1 }
       });
     });
 
