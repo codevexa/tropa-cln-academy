@@ -654,6 +654,21 @@
           scrollTrigger: { trigger: footMark, start: 'top 92%', once: true } });
     }
   }
+  /* mapa sob demanda: o iframe só é injetado quando o visitante pede */
+  (function () {
+    var btn = document.getElementById('mapLoad'), fb = document.getElementById('mapFb');
+    if (!btn || !fb) return;
+    btn.addEventListener('click', function () {
+      var f = document.createElement('iframe');
+      f.title = 'Mapa — Diamond Barbearia, Av. Protásio Alves 6585, Porto Alegre/RS';
+      f.loading = 'lazy';
+      f.referrerPolicy = 'no-referrer-when-downgrade';
+      f.src = 'https://www.google.com/maps?q=Av.%20Prot%C3%A1sio%20Alves%2C%206585%2C%20Porto%20Alegre%20-%20RS&output=embed';
+      fb.parentNode.appendChild(f);
+      fb.classList.add('is-gone');
+    });
+  })();
+
   var yr = document.getElementById('yr'); if (yr) yr.textContent = new Date().getFullYear();
 
   function boot() {
