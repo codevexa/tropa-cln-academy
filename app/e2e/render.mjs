@@ -5,7 +5,23 @@
  */
 import pw from '/opt/node-tools/node_modules/playwright/index.js';
 const { chromium } = pw;
+import { readFileSync } from 'node:fs';
 import { TABLES, OWNER, BARBER_PROFILE } from './fixtures.mjs';
+
+/* O supabase-js deriva a chave de sessão do hostname do projeto
+   (sb-<ref>-auth-token). Lemos o .env para o teste acompanhar qualquer
+   troca de projeto em vez de depender de uma chave fixa. */
+function storageKey() {
+  let url = 'http://localhost:54321';
+  for (const f of ['.env', '.env.production']) {
+    try {
+      const m = /^VITE_SUPABASE_URL=(.+)$/m.exec(readFileSync(new URL(f, import.meta.url).pathname.replace('/e2e/', '/'), 'utf8'));
+      if (m) { url = m[1].trim(); break; }
+    } catch { /* arquivo ausente: usa o padrão */ }
+  }
+  return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+}
+const SB_KEY = storageKey();
 
 const BASE = 'http://localhost:4178';
 const OWNER_ROUTES = [
@@ -65,7 +81,7 @@ async function run(profile, routes, tag, viewport, shots) {
   });
   await ctx.addInitScript(([key, value]) => {
     try { window.localStorage.setItem(key, value); } catch { /* ignore */ }
-  }, ['sb-localhost-auth-token', JSON.stringify(sess)]);
+  }, [SB_KEY, JSON.stringify(sess)]);
 
   const page = await ctx.newPage();
   const errors = [];
