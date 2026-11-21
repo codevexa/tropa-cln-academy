@@ -76,8 +76,8 @@ r=$(as $DONO "update appointments set status='concluido' where id='eeeeeeee-0000
 check "atendimento concluído" "ok" "$r"
 r=$(as $DONO "select count(*) from ticket_items where appointment_id='eeeeeeee-0000-0000-0000-000000000001';")
 check "concluir lançou o item na comanda automaticamente" "1" "$r"
-r=$(as $DONO "select public.bill_appointment('eeeeeeee-0000-0000-0000-000000000001') is not null;")
-check "refaturar devolve a mesma comanda" "t" "$r"
+r=$(as $DONO "select public.bill_appointment('eeeeeeee-0000-0000-0000-000000000001');")
+contains "bill_appointment NÃO é chamável por RPC" "permission denied" "$r"
 r=$(as $DONO "select count(*) from ticket_items where appointment_id='eeeeeeee-0000-0000-0000-000000000001';")
 check "FATURAMENTO NÃO DUPLICOU" "1" "$r"
 TID=$($PSQL -c "set role postgres; select ticket_id from ticket_items where appointment_id='eeeeeeee-0000-0000-0000-000000000001';")
@@ -96,7 +96,9 @@ check "comissão gerada na quitação" "1" "$r"
 r=$(as $DONO "select amount from commissions where ticket_id='$TID';")
 check "comissão = 50% de 37,00" "18.50" "$r"
 r=$(as $DONO "select public.generate_commissions('$TID');")
-check "reprocessar não cria comissão nova" "0" "$r"
+contains "generate_commissions NÃO é chamável por RPC" "permission denied" "$r"
+r=$(as $DONO "select count(*) from commissions where ticket_id='$TID';")
+check "comissão segue única" "1" "$r"
 r=$(as $B1 "select count(*) from commissions;")
 check "barbeiro 1 vê a própria comissão" "1" "$r"
 r=$(as $B2 "select count(*) from commissions;")
@@ -174,6 +176,22 @@ r=$(as $B1 "select count(*) from products;")
 check "BARBEIRO não acessa estoque" "0" "$r"
 r=$(as $ADMIN "select count(*) from expenses;")
 check "admin SEM permissão financeira não vê despesas" "0" "$r"
+
+echo ""
+echo "═══ SUPERFÍCIE RPC FECHADA ═══"
+for fn in "bill_appointment('eeeeeeee-0000-0000-0000-000000000001')" \
+          "generate_commissions('$TID')" \
+          "recalc_ticket('$TID')" \
+          "recalc_debt('dddddddd-0000-0000-0000-000000000001')"; do
+  r=$($PSQL -c "set role anon; select public.$fn;" 2>&1)
+  contains "visitante NÃO executa ${fn%%(*}" "permission denied" "$r"
+done
+r=$($PSQL -c "set role anon; select public.consume_package('bbbbbbbb-0000-0000-0000-000000000001','$IT','$BARB1','$SID');" 2>&1)
+contains "visitante NÃO consome pacote" "permission denied" "$r"
+r=$($PSQL -c "set role anon; select public.pay_commissions('$BARB1', array[]::uuid[]);" 2>&1)
+contains "visitante NÃO repassa comissão" "permission denied" "$r"
+r=$(as $B1 "select public.consume_package('bbbbbbbb-0000-0000-0000-000000000001','$IT','$BARB1','$SID');")
+contains "barbeiro NÃO consome pacote de cliente" "Sem permissão" "$r"
 
 echo ""
 echo "═══ API PÚBLICA DO SITE ═══"
