@@ -841,7 +841,8 @@
       phone: phone.trim(),
     })
       .then(function () {
-        say('Agendamento confirmado para ' + fmtHour(state.time) + '. Até lá!', 'ok');
+        say('Horário reservado para ' + fmtHour(state.time) +
+            '. A barbearia confirma com você em seguida.', 'ok');
         btn.hidden = true;
       })
       .catch(function (e) {
@@ -963,6 +964,10 @@
             '<span>' + (b.specialty || 'Profissional') + '</span></span></button>';
         }).join('');
       }
+      // o fluxo agenda de verdade agora: o aviso de protótipo não vale mais
+      var proto = document.getElementById('protoNote');
+      if (proto) proto.hidden = true;
+
       applyContent();
       applyTeam();
       applyGallery();
