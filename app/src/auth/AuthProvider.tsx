@@ -47,11 +47,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let alive = true;
+
+    /* Rede de segurança: se a sessão não responder, a tela não fica presa no
+       spinner para sempre. Sem sessão o usuário cai no login e tenta de novo,
+       que é muito melhor do que uma tela de carregamento infinita. */
+    const limite = window.setTimeout(() => {
+      if (alive) {
+        console.warn('[Diamond] a sessão demorou demais; indo para o login.');
+        setLoading(false);
+      }
+    }, 8000);
+
     supabase.auth.getSession().then(async ({ data }) => {
       if (!alive) return;
       setSession(data.session);
       await hydrate(data.session);
-      if (alive) setLoading(false);
+      if (alive) { window.clearTimeout(limite); setLoading(false); }
+    }).catch(() => {
+      if (alive) { window.clearTimeout(limite); setLoading(false); }
     });
     const { data: sub } = supabase.auth.onAuthStateChange(async (_e, s) => {
       if (!alive) return;
@@ -59,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await hydrate(s);
       setLoading(false);
     });
-    return () => { alive = false; sub.subscription.unsubscribe(); };
+    return () => { alive = false; window.clearTimeout(limite); sub.subscription.unsubscribe(); };
   }, []);
 
   const signIn = async (email: string, password: string) => {

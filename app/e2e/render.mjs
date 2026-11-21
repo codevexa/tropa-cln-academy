@@ -74,11 +74,8 @@ async function run(profile, routes, tag, viewport, shots) {
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
   const ctx = await browser.newContext({ viewport, deviceScaleFactor: 2, isMobile: viewport.width < 700, hasTouch: viewport.width < 700 });
   const sess = session(profile);
-  // supabase-js usa navigator.locks para serializar a sessão; no Chromium headless
-  // essa API não resolve e o cliente fica pendente para sempre. Desligamos só no teste.
-  await ctx.addInitScript(() => {
-    Object.defineProperty(navigator, 'locks', { value: undefined, configurable: true });
-  });
+  // navigator.locks fica DISPONÍVEL de propósito: o app agora usa trava própria
+  // (src/lib/supabase.ts) e não pode mais depender dessa API para não travar.
   await ctx.addInitScript(([key, value]) => {
     try { window.localStorage.setItem(key, value); } catch { /* ignore */ }
   }, [SB_KEY, JSON.stringify(sess)]);
