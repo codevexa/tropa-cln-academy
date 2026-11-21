@@ -4,6 +4,7 @@ import { must, dbError } from '../lib/db';
 import { money } from '../lib/format';
 import { Modal, Field, Badge, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner } from '../ui/kit';
 import { FotoUpload } from '../ui/FotoUpload';
+import { SeletorDeFotos, RETRATOS_DO_SITE } from '../ui/FotosDoSite';
 import { IcPlus, IcEdit } from '../ui/icons';
 import type { Barber, Profile, CommissionRule, Service, CommissionBasis, AdminPermission } from '../lib/types';
 
@@ -147,6 +148,10 @@ function BarberForm({ barber, count, onClose, onDone }: {
         <div className="full">
           <FotoUpload label="Foto do profissional" url={photoUrl} pasta="barbeiros"
                       altura={210} onChange={setPhotoUrl} />
+        </div>
+        <div className="full">
+          <SeletorDeFotos titulo="Ou aproveite uma foto já publicada"
+                          fotos={RETRATOS_DO_SITE} atual={photoUrl} onPick={setPhotoUrl} />
         </div>
         <Field label="Nome" full><input className="inp" value={name} onChange={(e) => setName(e.target.value)} /></Field>
         <Field label="Especialidade" full>

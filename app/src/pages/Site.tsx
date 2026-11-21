@@ -4,6 +4,7 @@ import { must, dbError } from '../lib/db';
 import { removerImagem } from '../lib/storage';
 import { Field, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner, Modal } from '../ui/kit';
 import { FotoUpload } from '../ui/FotoUpload';
+import { SeletorDeFotos, AMBIENTES_DO_SITE } from '../ui/FotosDoSite';
 import { IcPlus, IcTrash, IcEdit } from '../ui/icons';
 import type { GalleryImage, SiteContent } from '../lib/types';
 
@@ -80,6 +81,15 @@ function Textos() {
       <div className="card mb16">
         <div className="card-h"><h3>Apresentação</h3></div>
         <div className="form-grid">
+          <div className="full">
+            <FotoUpload label="Foto da seção" url={v.sobre?.foto ?? null} pasta="galeria"
+                        altura={200} onChange={(u) => set('sobre', 'foto', u ?? '')} />
+          </div>
+          <div className="full">
+            <SeletorDeFotos titulo="Ou aproveite uma foto já publicada"
+                            fotos={AMBIENTES_DO_SITE} atual={v.sobre?.foto ?? null}
+                            onPick={(u) => set('sobre', 'foto', u)} />
+          </div>
           <Field label="Título" full>
             <input className="inp" value={v.sobre?.titulo ?? ''} onChange={(e) => set('sobre', 'titulo', e.target.value)} />
           </Field>

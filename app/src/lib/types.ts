@@ -129,7 +129,7 @@ export interface GalleryImage {
 }
 export interface SiteContent {
   hero?: { titulo1?: string; titulo2?: string; subtitulo?: string; desde?: string };
-  sobre?: { titulo?: string; paragrafo1?: string; paragrafo2?: string };
+  sobre?: { titulo?: string; paragrafo1?: string; paragrafo2?: string; foto?: string };
   manifesto?: { titulo?: string; texto?: string };
   contato?: { horarios?: string | null; instagram?: string | null };
 }

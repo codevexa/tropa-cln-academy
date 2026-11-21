@@ -314,6 +314,10 @@
         var texto = val(site, el.dataset.site);
         if (texto) el.textContent = texto;
       });
+      var fotoSobre = val(site, 'sobre.foto');
+      var elFoto = document.getElementById('fotoSobre');
+      if (fotoSobre && elFoto) elFoto.src = fotoSobre;
+
       var h = val(site, 'contato.horarios');
       var elH = document.getElementById('infoHorarios');
       if (h && elH) { elH.textContent = h; elH.classList.remove('ph'); }
