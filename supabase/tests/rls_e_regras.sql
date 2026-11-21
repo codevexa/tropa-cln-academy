@@ -1,3 +1,6 @@
+-- OBSOLETO: mantido só como referência da primeira versão dos testes.
+-- A suíte em uso é supabase/tests/run.sh (63 testes), que roda cada perfil
+-- numa sessão própria. Este arquivo usa SET LOCAL fora de transação e falha.
 \set ON_ERROR_STOP on
 \pset format unaligned
 \pset tuples_only on
