@@ -275,6 +275,21 @@
 
   var CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 
+  /* ---------- dados ao vivo (quando o Supabase estiver configurado) ---------- */
+  function hydrateFromDb() {
+    if (!BK.online) return Promise.resolve(false);
+    return Promise.all([BK.services(), BK.barbers()])
+      .then(function (res) {
+        LIVE.services = res[0];
+        LIVE.barbers = res[1];
+        return true;
+      })
+      .catch(function (e) {
+        console.warn('[Diamond] não foi possível carregar do servidor:', e.message);
+        return false;
+      });
+  }
+
   /* ---------- serviços ---------- */
   var svcGrid = document.getElementById('svcGrid');
   if (svcGrid) {
@@ -525,7 +540,9 @@
   /* ------------------------------------------------------------------
      7. FLUXO DE AGENDAMENTO (somente interface — sem reservas)
      ------------------------------------------------------------------ */
-  var state = { service: null, pro: null, date: null, step: 0 };
+  var state = { service: null, pro: null, date: null, time: null, step: 0 };
+  var BK = window.DiamondBooking || { online: false };
+  var LIVE = { services: null, barbers: null };
 
   var bookServices = document.getElementById('bookServices');
   if (bookServices) {
@@ -555,12 +572,12 @@
   }
 
   function selService(i) {
-    state.service = i;
+    state.service = i; state.time = null;
     bookServices.querySelectorAll('.opt').forEach(function (o, k) { o.classList.toggle('is-sel', k === i); });
     updateSummary();
   }
   function selPro(i) {
-    state.pro = i;
+    state.pro = i; state.time = null;
     bookPros.querySelectorAll('.opt').forEach(function (o, k) { o.classList.toggle('is-sel', k === i); });
     updateSummary();
   }
@@ -603,6 +620,7 @@
       var dd = e.target.closest('[data-day]');
       if (dd) {
         state.date = new Date(view.getFullYear(), view.getMonth(), +dd.dataset.day);
+        state.time = null;
         renderCal(); updateSummary();
       }
     });
@@ -614,20 +632,125 @@
       el.textContent = val || el.dataset.ph || el.textContent;
       el.classList.toggle('empty', !val);
     }
-    var s = state.service != null ? SERVICES[state.service] : null;
-    set('sumService', s ? s.n : '');
-    set('sumDuration', s ? s.d : '');
-    set('sumPrice', s ? 'A partir de R$ ' + s.p : '');
-    set('sumPro', state.pro != null
-      ? (TEAM[state.pro].name || ('Profissional ' + String(state.pro + 1).padStart(2, '0') + ' — nome a definir'))
+    // com o banco conectado, o resumo usa os dados reais; sem ele, a tabela estática
+    var live = LIVE.services && LIVE.barbers;
+    var s = state.service == null ? null
+      : live ? LIVE.services[state.service] : SERVICES[state.service];
+    set('sumService', s ? (live ? s.name : s.n) : '');
+    set('sumDuration', s ? (live ? s.duration_min + ' minutos' : s.d) : '');
+    set('sumPrice', s
+      ? 'A partir de R$ ' + (live ? Number(s.price).toFixed(2).replace('.', ',') : s.p)
       : '');
+    set('sumPro', state.pro == null ? ''
+      : live ? LIVE.barbers[state.pro].display_name
+             : (TEAM[state.pro].name ||
+                ('Profissional ' + String(state.pro + 1).padStart(2, '0') + ' — nome a definir')));
     set('sumDate', state.date
       ? state.date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
       : '');
+    set('sumTime', state.time ? fmtHour(state.time) : '');
   }
   ['sumService','sumDuration','sumPrice','sumPro','sumDate','sumTime'].forEach(function (id) {
     var el = document.getElementById(id); if (el) el.dataset.ph = el.textContent;
   });
+
+  /* ---------- grade de horários ---------- */
+  function fmtHour(iso) {
+    return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderSlots() {
+    var pane = document.getElementById('slotsPane');
+    if (!pane) return;
+
+    if (!BK.online || !LIVE.services) {
+      return; // mantém o aviso de "aguardando integração"
+    }
+    if (state.service == null || state.pro == null || !state.date) {
+      pane.innerHTML = '<p class="slot-state">Escolha serviço, profissional e data para ver os horários livres.</p>';
+      return;
+    }
+
+    var svc = LIVE.services[state.service];
+    var barber = LIVE.barbers[state.pro];
+    if (!svc || !barber) {
+      pane.innerHTML = '<p class="slot-state">Selecione novamente o serviço e o profissional.</p>';
+      return;
+    }
+
+    pane.innerHTML = '<p class="slot-state">Consultando horários livres…</p>';
+    var d = state.date;
+    var iso = d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+
+    BK.slots(barber.id, iso, svc.id)
+      .then(function (list) {
+        if (!list.length) {
+          pane.innerHTML = '<p class="slot-state">Nenhum horário livre nesta data para ' +
+            barber.display_name + '. Tente outro dia ou outro profissional.</p>';
+          return;
+        }
+        var html = '<div class="slot-grid">';
+        for (var i = 0; i < list.length; i++) {
+          html += '<button type="button" class="slot" data-slot="' + list[i] + '">' +
+                  fmtHour(list[i]) + '</button>';
+        }
+        pane.innerHTML = html + '</div>';
+        pane.querySelectorAll('.slot').forEach(function (b) {
+          b.addEventListener('click', function () {
+            state.time = b.dataset.slot;
+            pane.querySelectorAll('.slot').forEach(function (x) { x.classList.remove('is-sel'); });
+            b.classList.add('is-sel');
+            updateSummary();
+          });
+        });
+      })
+      .catch(function (e) {
+        pane.innerHTML = '<p class="slot-state">Não foi possível consultar os horários: ' +
+          e.message + '</p>';
+      });
+  }
+
+  /* ---------- confirmação do agendamento ---------- */
+  function confirmBooking() {
+    var btn = document.getElementById('bookConfirm');
+    var msg = document.getElementById('bkMsg');
+    var name = (document.getElementById('bkName') || {}).value || '';
+    var phone = (document.getElementById('bkPhone') || {}).value || '';
+
+    function say(text, kind) {
+      if (!msg) return;
+      msg.hidden = false;
+      msg.textContent = text;
+      msg.className = 'bk-msg' + (kind ? ' is-' + kind : '');
+    }
+
+    if (state.service == null || state.pro == null || !state.time) {
+      return say('Escolha serviço, profissional, data e horário antes de confirmar.', 'err');
+    }
+    if (name.trim().length < 2) return say('Informe seu nome.', 'err');
+    if (phone.replace(/\D/g, '').length < 10) return say('Informe um telefone com DDD.', 'err');
+
+    btn.disabled = true;
+    say('Enviando…', null);
+
+    BK.book({
+      barberId: LIVE.barbers[state.pro].id,
+      serviceId: LIVE.services[state.service].id,
+      startsAt: state.time,
+      name: name.trim(),
+      phone: phone.trim(),
+    })
+      .then(function () {
+        say('Agendamento confirmado para ' + fmtHour(state.time) + '. Até lá!', 'ok');
+        btn.hidden = true;
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        say(e.message, 'err');
+      });
+  }
 
   function goStep(n) {
     state.step = Math.max(0, Math.min(4, n));
@@ -639,12 +762,38 @@
       b.classList.toggle('is-done', i < state.step);
     });
     var prev = document.getElementById('bookPrev'), next = document.getElementById('bookNext');
+    var confirm = document.getElementById('bookConfirm');
+    var box = document.getElementById('confirmBox');
+    var note = document.getElementById('reviewNote');
     prev.style.visibility = state.step === 0 ? 'hidden' : 'visible';
-    next.textContent = state.step === 4 ? 'Aguardando integração' : 'Avançar';
-    next.disabled = state.step === 4;
+
+    var live = BK.online && LIVE.services;
+    if (state.step === 3) renderSlots();
+
+    if (state.step === 4) {
+      next.hidden = true;
+      if (live) {
+        if (confirm) confirm.hidden = false;
+        if (box) box.hidden = false;
+        if (note) note.hidden = true;
+      } else {
+        next.hidden = false;
+        next.textContent = 'Aguardando integração';
+        next.disabled = true;
+      }
+    } else {
+      next.hidden = false;
+      next.disabled = false;
+      next.textContent = 'Avançar';
+      if (confirm) confirm.hidden = true;
+      if (box) box.hidden = true;
+      if (note) note.hidden = false;
+    }
   }
   document.getElementById('bookPrev').addEventListener('click', function () { goStep(state.step - 1); });
   document.getElementById('bookNext').addEventListener('click', function () { goStep(state.step + 1); });
+  var confirmBtn = document.getElementById('bookConfirm');
+  if (confirmBtn) confirmBtn.addEventListener('click', confirmBooking);
   document.getElementById('bookSteps').addEventListener('click', function (e) {
     var b = e.target.closest('.bstep'); if (b) goStep(+b.dataset.step);
   });
@@ -695,6 +844,27 @@
   var yr = document.getElementById('yr'); if (yr) yr.textContent = new Date().getFullYear();
 
   function boot() {
+    hydrateFromDb().then(function (ok) {
+      if (!ok) return;
+      // substitui a lista estática pelos dados reais do banco
+      if (LIVE.services && bookServices) {
+        bookServices.innerHTML = LIVE.services.map(function (s, i) {
+          return '<button class="opt" type="button" data-svc="' + i + '">' +
+            '<b>' + s.name + '</b><span class="meta2">' + s.duration_min + ' minutos</span>' +
+            '<span class="meta2">a partir de R$ ' + Number(s.price).toFixed(2).replace('.', ',') +
+            '</span></button>';
+        }).join('');
+      }
+      if (LIVE.barbers && bookPros) {
+        bookPros.innerHTML = LIVE.barbers.map(function (b, i) {
+          return '<button class="opt opt-pro" type="button" data-pro="' + i + '">' +
+            '<span style="display:flex;flex-direction:column;gap:3px;text-align:left">' +
+            '<b>' + b.display_name + '</b>' +
+            '<span>' + (b.specialty || 'Profissional') + '</span></span></button>';
+        }).join('');
+      }
+      goStep(state.step);
+    });
     initStage();
     initReveals();
     onScroll();
