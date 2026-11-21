@@ -40,9 +40,21 @@
     services: function () {
       return api('/services?select=id,name,duration_min,price,category&active=eq.true&order=order_index');
     },
-    /** Profissionais ativos. */
+    /** Profissionais ativos, com foto e apresentação. */
     barbers: function () {
-      return api('/barbers?select=id,display_name,specialty&active=eq.true&order=order_index');
+      return api('/barbers?select=id,display_name,specialty,bio,photo_url&active=eq.true&order=order_index');
+    },
+    /** Textos do site e dados do estabelecimento, editados no painel. */
+    content: function () {
+      return api('/settings?select=key,value&key=in.(site,business)').then(function (rows) {
+        var out = {};
+        (rows || []).forEach(function (r) { out[r.key] = r.value; });
+        return out;
+      });
+    },
+    /** Fotos da galeria publicadas pelo painel. */
+    gallery: function () {
+      return api('/gallery_images?select=url,caption&active=eq.true&order=order_index');
     },
     /** Horários realmente livres, calculados no servidor. */
     slots: function (barberId, isoDate, serviceId) {

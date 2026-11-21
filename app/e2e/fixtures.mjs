@@ -114,5 +114,9 @@ export const TABLES = {
     visits: i === 0 ? 5 : 1, total_spent: i === 0 ? 320 : 60,
     last_visit: at(10, 0, i === 0 ? -3 : -90), first_visit: at(10, 0, -200),
     avg_days_between: i === 0 ? 21 : null })),
+  gallery_images: [
+    { id: uid('ga111111'), url: '/logo-badge.png', caption: 'Ambiente', order_index: 1, active: true, created_at: at(9) },
+    { id: uid('ga222222'), url: '/logo-badge.png', caption: 'Resultado', order_index: 2, active: false, created_at: at(9) },
+  ],
   v_commission_summary: [{ barber_id: BARBERS[0].id, display_name: 'Barbeiro Um', pending: 18.5, paid: 120, pending_count: 1 }],
 };

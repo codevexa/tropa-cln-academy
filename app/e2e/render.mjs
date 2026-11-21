@@ -29,7 +29,7 @@ const OWNER_ROUTES = [
   ['/clientes', 'Clientes'], ['/servicos', 'Serviços'], ['/profissionais', 'Profissionais'],
   ['/pacotes', 'Pacotes'], ['/comissoes', 'Comissões'], ['/fiados', 'Fiados'],
   ['/despesas', 'Despesas'], ['/relatorios', 'Relatórios'], ['/estoque', 'Produtos'],
-  ['/fornecedores', 'Fornecedores'], ['/config', 'Configurações'],
+  ['/fornecedores', 'Fornecedores'], ['/site', 'Site público'], ['/config', 'Configurações'],
 ];
 const BARBER_ROUTES = [
   ['/', 'Resumo'], ['/minha-agenda', 'Minha agenda'], ['/meus-clientes', 'Meus clientes'],

@@ -284,16 +284,104 @@
   /* ---------- dados ao vivo (quando o Supabase estiver configurado) ---------- */
   function hydrateFromDb() {
     if (!BK.online) return Promise.resolve(false);
-    return Promise.all([BK.services(), BK.barbers()])
+    return Promise.all([BK.services(), BK.barbers(), BK.content(), BK.gallery()])
       .then(function (res) {
         LIVE.services = res[0];
-        LIVE.barbers = res[1];
+        LIVE.barbers  = res[1];
+        LIVE.content  = res[2];
+        LIVE.gallery  = res[3];
         return true;
       })
       .catch(function (e) {
         console.warn('[Diamond] não foi possível carregar do servidor:', e.message);
         return false;
       });
+  }
+
+  /* ---------- aplica no site o que foi editado no painel ---------- */
+  function val(obj, caminho) {
+    return caminho.split('.').reduce(function (o, k) {
+      return o && o[k] != null ? o[k] : null;
+    }, obj);
+  }
+
+  function applyContent() {
+    var site = (LIVE.content && LIVE.content.site) || null;
+    var negocio = (LIVE.content && LIVE.content.business) || null;
+
+    if (site) {
+      document.querySelectorAll('[data-site]').forEach(function (el) {
+        var texto = val(site, el.dataset.site);
+        if (texto) el.textContent = texto;
+      });
+      var h = val(site, 'contato.horarios');
+      var elH = document.getElementById('infoHorarios');
+      if (h && elH) { elH.textContent = h; elH.classList.remove('ph'); }
+    }
+
+    if (negocio) {
+      var ig = negocio.instagram;
+      var elI = document.getElementById('infoInstagram');
+      if (ig && elI) {
+        var perfil = String(ig).trim();
+        var alvo = perfil.indexOf('http') === 0
+          ? perfil : 'https://instagram.com/' + perfil.replace(/^@/, '');
+        elI.innerHTML = '<a href="' + alvo + '" target="_blank" rel="noopener">' +
+                        (perfil.indexOf('http') === 0 ? perfil : '@' + perfil.replace(/^@/, '')) + '</a>';
+        elI.classList.remove('ph');
+        document.querySelectorAll('.f-social a[aria-label^="Instagram"]').forEach(function (a) {
+          a.setAttribute('href', alvo);
+          a.setAttribute('target', '_blank');
+          a.setAttribute('rel', 'noopener');
+        });
+      }
+      if (negocio.phone) {
+        var dig = String(negocio.phone).replace(/\D/g, '');
+        var wa = 'https://wa.me/' + (dig.length <= 11 ? '55' + dig : dig);
+        document.querySelectorAll('a[href*="wa.me"]').forEach(function (a) { a.setAttribute('href', wa); });
+        document.querySelectorAll('a[href^="tel:"]').forEach(function (a) { a.setAttribute('href', 'tel:+' + (dig.length <= 11 ? '55' + dig : dig)); });
+      }
+    }
+  }
+
+  /* ---------- time e galeria com os dados reais ---------- */
+  function applyTeam() {
+    if (!teamRail || !LIVE.barbers || !LIVE.barbers.length) return;
+    teamRail.innerHTML = LIVE.barbers.map(function (b, i) {
+      var total = String(LIVE.barbers.length).padStart(2, '0');
+      var foto = b.photo_url
+        ? '<img src="' + b.photo_url + '" alt="' + b.display_name + ' — Diamond Barbearia" loading="lazy" decoding="async">'
+        : '<div class="member-sem-foto"><span>' + b.display_name.slice(0, 2).toUpperCase() + '</span></div>';
+      return '<article class="member" data-rv="fade-u" tabindex="0">' + foto +
+        '<svg class="member-cut" viewBox="0 0 100 100" aria-hidden="true">' +
+        '<path d="M8 8 H46 L8 46 Z" fill="none" stroke="#fff" stroke-width="1.2" opacity=".8"/>' +
+        '<path d="M8 8 H28 L8 28 Z" fill="none" stroke="#fff" stroke-width="1.2" opacity=".5"/></svg>' +
+        '<div class="member-body">' +
+          '<span class="member-idx">' + String(i + 1).padStart(2, '0') + ' / ' + total + '</span>' +
+          '<h3 class="member-name">' + b.display_name + '</h3>' +
+          '<p class="member-role">' + (b.specialty || 'Profissional') + '</p>' +
+          (b.bio ? '<p class="member-bio">' + b.bio + '</p>' : '') +
+          '<button class="btn btn--sm" type="button" data-book-pro="' + i + '">Agendar com este profissional</button>' +
+        '</div></article>';
+    }).join('');
+    var aviso = document.querySelector('.team-note');
+    if (aviso) aviso.hidden = true;
+  }
+
+  function applyGallery() {
+    if (!galEl || !LIVE.gallery || !LIVE.gallery.length) return;
+    var formas = ['g-a', 'g-b', 'g-c', 'g-d', 'g-d', 'g-d', 'g-d', 'g-b'];
+    lbItems = [];
+    galEl.innerHTML = LIVE.gallery.map(function (g, i) {
+      var idx = lbItems.length;
+      lbItems.push({ src: g.url, cap: g.caption || 'Diamond Barbearia' });
+      return '<figure class="gal-item ' + (formas[i % formas.length]) + '" data-rv="fade-u" data-lb="' + idx + '" tabindex="0">' +
+        '<img src="' + g.url + '" alt="' + (g.caption || 'Diamond Barbearia') + '" loading="lazy" decoding="async">' +
+        '<span class="zoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">' +
+        '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v6M8 11h6"/></svg></span>' +
+        (g.caption ? '<figcaption class="gal-cap">' + g.caption + '</figcaption>' : '') +
+        '</figure>';
+    }).join('');
   }
 
   /* ---------- serviços ---------- */
@@ -548,7 +636,7 @@
      ------------------------------------------------------------------ */
   var state = { service: null, pro: null, date: null, time: null, step: 0 };
   var BK = window.DiamondBooking || { online: false };
-  var LIVE = { services: null, barbers: null };
+  var LIVE = { services: null, barbers: null, content: null, gallery: null };
 
   var bookServices = document.getElementById('bookServices');
   if (bookServices) {
@@ -863,12 +951,18 @@
       }
       if (LIVE.barbers && bookPros) {
         bookPros.innerHTML = LIVE.barbers.map(function (b, i) {
-          return '<button class="opt opt-pro" type="button" data-pro="' + i + '">' +
+          var ft = b.photo_url
+            ? '<img src="' + b.photo_url + '" alt="" width="46" height="46" loading="lazy">' : '';
+          return '<button class="opt opt-pro" type="button" data-pro="' + i + '">' + ft +
             '<span style="display:flex;flex-direction:column;gap:3px;text-align:left">' +
             '<b>' + b.display_name + '</b>' +
             '<span>' + (b.specialty || 'Profissional') + '</span></span></button>';
         }).join('');
       }
+      applyContent();
+      applyTeam();
+      applyGallery();
+      if (hasGSAP && window.ScrollTrigger) ScrollTrigger.refresh();
       goStep(state.step);
     });
     initStage();

@@ -20,6 +20,7 @@ import Fornecedores from './pages/Fornecedores';
 import Despesas from './pages/Despesas';
 import Relatorios from './pages/Relatorios';
 import Config from './pages/Config';
+import Site from './pages/Site';
 
 import MeuPainel from './pages/barber/MeuPainel';
 import MinhasComissoes from './pages/barber/MinhasComissoes';
@@ -101,6 +102,7 @@ function Routed() {
             <Route path="/fiados" element={<StaffOnly><Fiados /></StaffOnly>} />
             <Route path="/profissionais" element={<OwnerOnly><Profissionais /></OwnerOnly>} />
             <Route path="/config" element={<OwnerOnly><Config /></OwnerOnly>} />
+            <Route path="/site" element={<StaffOnly><Site /></StaffOnly>} />
             <Route path="/comissoes" element={isOwner || can('commissions') ? <Comissoes /> : <Denied />} />
             <Route path="/relatorios" element={isOwner || can('reports') ? <Relatorios /> : <Denied />} />
             <Route path="/despesas" element={<Need perm="financial"><Despesas /></Need>} />

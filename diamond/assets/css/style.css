@@ -599,3 +599,9 @@ section{position:relative;z-index:2}
 .bk-msg.is-ok{border-color:rgba(76,169,107,.45);background:rgba(76,169,107,.12);color:#a9dcbb}
 .bk-msg.is-err{border-color:rgba(199,92,92,.45);background:rgba(199,92,92,.12);color:#f0b9b9}
 @media (max-width:620px){ .form-mini{grid-template-columns:1fr} }
+
+/* profissional sem foto cadastrada */
+.member-sem-foto{width:100%;height:100%;display:grid;place-items:center;
+  background:linear-gradient(165deg,#17171a,#0b0b0c)}
+.member-sem-foto span{font-family:'Oswald',sans-serif;font-size:2.4rem;font-weight:600;
+  letter-spacing:.1em;color:rgba(255,255,255,.22)}

@@ -122,3 +122,14 @@ export interface ExpenseFull extends Expense { expense_categories: { id: string;
 export interface BusinessHour { weekday: number; opens: string | null; closes: string | null; closed: boolean }
 export interface BarberSchedule { id: string; barber_id: string; weekday: number; starts: string; ends: string; active: boolean }
 export interface BarberTimeOff { id: string; barber_id: string; starts_at: string; ends_at: string; reason: string | null }
+
+export interface GalleryImage {
+  id: string; url: string; caption: string | null;
+  order_index: number; active: boolean; created_at: string;
+}
+export interface SiteContent {
+  hero?: { titulo1?: string; titulo2?: string; subtitulo?: string; desde?: string };
+  sobre?: { titulo?: string; paragrafo1?: string; paragrafo2?: string };
+  manifesto?: { titulo?: string; texto?: string };
+  contato?: { horarios?: string | null; instagram?: string | null };
+}

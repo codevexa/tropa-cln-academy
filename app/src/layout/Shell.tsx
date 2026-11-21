@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { initials } from '../lib/format';
 import {
   IcDash, IcCal, IcCash, IcTicket, IcUsers, IcScissor, IcMoney, IcDebt,
-  IcPack, IcBox, IcTruck, IcChart, IcGear, IcOut, IcMenu, IcUser, IcClock,
+  IcPack, IcBox, IcTruck, IcChart, IcGear, IcOut, IcMenu, IcUser, IcClock, IcDiamond,
 } from '../ui/icons';
 
 type Item = { to: string; label: string; Icon: (p: { className?: string }) => JSX.Element; show: boolean };
@@ -63,7 +63,10 @@ export default function Shell({ children }: { children: ReactNode }) {
         },
         {
           title: 'Sistema',
-          items: [{ to: '/config', label: 'Configurações', Icon: IcGear, show: isOwner }],
+          items: [
+            { to: '/site', label: 'Site público', Icon: IcDiamond, show: isStaff },
+            { to: '/config', label: 'Configurações', Icon: IcGear, show: isOwner },
+          ],
         },
       ];
 

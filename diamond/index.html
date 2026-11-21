@@ -112,11 +112,11 @@
 <section class="hero" id="inicio">
   <div class="container hero-grid">
     <h1>
-      <span class="ln"><span data-hero="1">Diamond</span></span>
-      <span class="ln"><span data-hero="2">Barbearia</span></span>
+      <span class="ln"><span data-hero="1" data-site="hero.titulo1">Diamond</span></span>
+      <span class="ln"><span data-hero="2" data-site="hero.titulo2">Barbearia</span></span>
     </h1>
-    <p class="hero-sub"><span data-hero="3">Seu estilo. Nossa assinatura.</span></p>
-    <p class="hero-since" data-hero="4">Desde 2015</p>
+    <p class="hero-sub"><span data-hero="3" data-site="hero.subtitulo">Seu estilo. Nossa assinatura.</span></p>
+    <p class="hero-since" data-hero="4" data-site="hero.desde">Desde 2015</p>
     <div class="hero-actions" data-hero="5">
       <a href="#agendar" class="btn btn--solid">Agendar horário</a>
       <a href="#servicos" class="btn btn--ghost">Ver serviços</a>
@@ -138,9 +138,9 @@
       </div>
       <div class="about-copy">
         <p class="eyebrow" data-rv="fade-u">Sobre nós</p>
-        <h2 class="sec-title sec-title--sm chrome" data-rv="fade-u">Seja bem-vindo(a)<br>à Diamond Barbearia</h2>
-        <p class="lead" data-rv="fade-u">Mais que uma barbearia, um espaço dedicado ao cuidado com seu estilo, personalidade e identidade.</p>
-        <p class="lead" data-rv="fade-u">Desde 2015, oferecendo uma experiência de qualidade, profissionalismo e atenção aos detalhes.</p>
+        <h2 class="sec-title sec-title--sm chrome" data-rv="fade-u" data-site="sobre.titulo">Seja bem-vindo(a)<br>à Diamond Barbearia</h2>
+        <p class="lead" data-rv="fade-u" data-site="sobre.paragrafo1">Mais que uma barbearia, um espaço dedicado ao cuidado com seu estilo, personalidade e identidade.</p>
+        <p class="lead" data-rv="fade-u" data-site="sobre.paragrafo2">Desde 2015, oferecendo uma experiência de qualidade, profissionalismo e atenção aos detalhes.</p>
         <div class="stats" data-rv="fade-u">
           <div class="stat"><b data-count="2015">2015</b><span>Desde</span></div>
           <div class="stat"><b data-count="15">15</b><span>Serviços</span></div>
@@ -155,8 +155,8 @@
 <section class="manifesto" id="manifesto">
   <div class="container">
     <p class="eyebrow is-center" data-rv="fade-u">A assinatura</p>
-    <h2 class="chrome" data-rv="fade-u" style="margin-top:26px">Cada corte é uma lapidação</h2>
-    <p class="lead center" data-rv="fade-u" style="margin-inline:auto;text-align:center">Técnica, acabamento e consistência. O mesmo cuidado que transforma uma pedra bruta em diamante é o que colocamos em cada atendimento.</p>
+    <h2 class="chrome" data-rv="fade-u" style="margin-top:26px" data-site="manifesto.titulo">Cada corte é uma lapidação</h2>
+    <p class="lead center" data-rv="fade-u" style="margin-inline:auto;text-align:center" data-site="manifesto.texto">Técnica, acabamento e consistência. O mesmo cuidado que transforma uma pedra bruta em diamante é o que colocamos em cada atendimento.</p>
   </div>
 </section>
 
@@ -315,11 +315,11 @@
           </div>
           <div class="info">
             <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-            <div><h4>Horário de funcionamento</h4><p class="ph">Campo editável — a definir pelo estabelecimento.</p></div>
+            <div><h4>Horário de funcionamento</h4><p class="ph" id="infoHorarios">Campo editável — a definir pelo estabelecimento.</p></div>
           </div>
           <div class="info">
             <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg></span>
-            <div><h4>Instagram</h4><p class="ph">Campo editável — informar @perfil.</p></div>
+            <div><h4>Instagram</h4><p class="ph" id="infoInstagram">Campo editável — informar @perfil.</p></div>
           </div>
         </div>
         <div class="contact-actions">

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money } from '../lib/format';
 import { Modal, Field, Badge, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner } from '../ui/kit';
+import { FotoUpload } from '../ui/FotoUpload';
 import { IcPlus, IcEdit } from '../ui/icons';
 import type { Barber, Profile, CommissionRule, Service, CommissionBasis, AdminPermission } from '../lib/types';
 
@@ -60,12 +61,19 @@ function Barbeiros() {
         <div className="tw">
           <table>
             <thead>
-              <tr><th>Nome</th><th>Especialidade</th><th>Login vinculado</th>
-                  <th>Comissão</th><th>Situação</th><th /></tr>
+              <tr><th style={{ width: 54 }}>Foto</th><th>Nome</th><th>Especialidade</th>
+                  <th>Login vinculado</th><th>Comissão</th><th>Situação</th><th /></tr>
             </thead>
             <tbody>
               {(list.data ?? []).map((b) => (
                 <tr key={b.id}>
+                  <td>
+                    {b.photo_url
+                      ? <img src={b.photo_url} alt="" width={38} height={38}
+                             style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover',
+                                      border: '1px solid var(--line-2)' }} />
+                      : <span className="avatar">{b.display_name.slice(0, 2).toUpperCase()}</span>}
+                  </td>
                   <td>{b.display_name}</td>
                   <td className="mut">{b.specialty || '—'}</td>
                   <td className="mut">{b.profiles?.email ?? <span className="mut2">sem login</span>}</td>
@@ -107,6 +115,7 @@ function BarberForm({ barber, count, onClose, onDone }: {
   const [name, setName] = useState(barber?.display_name ?? '');
   const [specialty, setSpecialty] = useState(barber?.specialty ?? '');
   const [bio, setBio] = useState(barber?.bio ?? '');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(barber?.photo_url ?? null);
   const [active, setActive] = useState(barber?.active ?? true);
   const { busy, error, run } = useSubmit();
 
@@ -114,7 +123,7 @@ function BarberForm({ barber, count, onClose, onDone }: {
     if (name.trim().length < 2) throw new Error('Informe o nome do profissional.');
     const payload = {
       display_name: name.trim(), specialty: specialty.trim() || null,
-      bio: bio.trim() || null, active,
+      bio: bio.trim() || null, photo_url: photoUrl, active,
     };
     const { error: e } = barber
       ? await supabase.from('barbers').update(payload).eq('id', barber.id)
@@ -131,7 +140,14 @@ function BarberForm({ barber, count, onClose, onDone }: {
       </>
     }>
       {error && <div className="mb16"><ErrorBox msg={error} /></div>}
+      <div className="mb16">
+        <Banner>A foto aparece no site público, na seção <b>Nosso time</b>. Use retrato, de preferência vertical.</Banner>
+      </div>
       <div className="form-grid">
+        <div className="full">
+          <FotoUpload label="Foto do profissional" url={photoUrl} pasta="barbeiros"
+                      altura={210} onChange={setPhotoUrl} />
+        </div>
         <Field label="Nome" full><input className="inp" value={name} onChange={(e) => setName(e.target.value)} /></Field>
         <Field label="Especialidade" full>
           <input className="inp" value={specialty} onChange={(e) => setSpecialty(e.target.value)} />
