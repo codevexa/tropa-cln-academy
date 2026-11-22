@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money, dateBR, label } from '../lib/format';
-import { Modal, Badge, Kpi, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner, Field } from '../ui/kit';
+import { Modal, Badge, Kpi, ErrorBox, Empty, useAsync, useSubmit, Banner, Field, SkeletonTabela } from '../ui/kit';
 import type { CommissionFull, Barber, PaymentMethod } from '../lib/types';
 
 export default function Comissoes() {
@@ -62,7 +62,7 @@ export default function Comissoes() {
         </select>
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !rows.length && (
         <Empty msg={status === 'pendente' ? 'Nenhuma comissão pendente.' : 'Nenhuma comissão paga ainda.'} />

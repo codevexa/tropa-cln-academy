@@ -3,7 +3,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import Login from './auth/Login';
 import Shell from './layout/Shell';
-import { Loading, Banner } from './ui/kit';
+import { Loading, SkeletonTabela, Banner } from './ui/kit';
 import type { AdminPermission } from './lib/types';
 
 /* Cada tela vira um arquivo próprio, buscado só quando o usuário abre a rota.
@@ -87,7 +87,7 @@ function Routed() {
 
   return (
     <Shell>
-      <Suspense fallback={<Loading />}>
+      <Suspense fallback={<SkeletonTabela />}>
         <Routes>
           {isBarber ? (
             <>

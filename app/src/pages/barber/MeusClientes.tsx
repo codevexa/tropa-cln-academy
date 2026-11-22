@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { must } from '../../lib/db';
 import { useAuth } from '../../auth/AuthProvider';
 import { money, dateBR, phoneBR, num } from '../../lib/format';
-import { Kpi, Loading, ErrorBox, Empty, useAsync, Banner } from '../../ui/kit';
+import { Kpi, ErrorBox, Empty, useAsync, Banner, SkeletonTabela } from '../../ui/kit';
 import { IcSearch } from '../../ui/icons';
 import type { AppointmentFull } from '../../lib/types';
 
@@ -54,7 +54,7 @@ export default function MeusClientes() {
         <input className="inp" placeholder="Buscar cliente…" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !rows.length && <Empty msg="Você ainda não concluiu atendimentos." />}
 

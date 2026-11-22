@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money, dateBR, phoneBR, num } from '../lib/format';
-import { Modal, Field, Badge, Loading, ErrorBox, Empty, useAsync, useSubmit, Kpi } from '../ui/kit';
+import { Modal, Field, Badge, Loading, ErrorBox, Empty, useAsync, useSubmit, Kpi, SkeletonTabela } from '../ui/kit';
 import { IcPlus, IcSearch } from '../ui/icons';
 import type { ClientStats, Client, AppointmentFull } from '../lib/types';
 
@@ -96,7 +96,7 @@ export default function Clientes() {
         </div>
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !rows.length && <Empty msg="Nenhum cliente encontrado." />}
 
@@ -241,7 +241,7 @@ function ClientDetail({ id, onClose, onEdit }: {
           </div>
 
           <h3 className="mb16">Histórico de atendimentos</h3>
-          {history.loading && <Loading />}
+          {history.loading && <SkeletonTabela />}
           {!history.loading && !(history.data ?? []).length && <Empty msg="Sem atendimentos registrados." />}
           {!!(history.data ?? []).length && (
             <div className="tw">

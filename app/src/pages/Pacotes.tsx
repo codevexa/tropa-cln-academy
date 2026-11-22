@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money, dateBR, label } from '../lib/format';
-import { Modal, Field, Badge, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner, Kpi } from '../ui/kit';
+import { Modal, Field, Badge, ErrorBox, Empty, useAsync, useSubmit, Banner, Kpi, SkeletonTabela } from '../ui/kit';
 import { IcPlus } from '../ui/icons';
 import type { Package, ClientPackageFull, Client, Service } from '../lib/types';
 
@@ -51,7 +51,7 @@ function Vendidos() {
         <button className={!onlyActive ? 'on' : ''} onClick={() => setOnlyActive(false)}>Todos</button>
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !rows.length && <Empty msg="Nenhum pacote vendido." />}
 
@@ -162,7 +162,7 @@ function Catalogo() {
         <button className="btn pri sm" onClick={() => setCreating(true)}><IcPlus />Novo pacote</button>
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {!list.loading && !(list.data ?? []).length && <Empty msg="Nenhum pacote cadastrado." />}
 
       {!!(list.data ?? []).length && (

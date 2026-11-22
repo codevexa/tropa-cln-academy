@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money } from '../lib/format';
-import { Modal, Field, Badge, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner } from '../ui/kit';
+import { Modal, Field, Badge, ErrorBox, Empty, useAsync, useSubmit, Banner, SkeletonTabela } from '../ui/kit';
 import { FotoUpload } from '../ui/FotoUpload';
 import { SeletorDeFotos, RETRATOS_DO_SITE } from '../ui/FotosDoSite';
 import { IcPlus, IcEdit } from '../ui/icons';
@@ -54,7 +54,7 @@ function Barbeiros() {
         <button className="btn pri sm" onClick={() => setCreating(true)}><IcPlus />Novo barbeiro</button>
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !(list.data ?? []).length && <Empty msg="Nenhum barbeiro cadastrado." />}
 
@@ -308,7 +308,7 @@ function Acessos() {
         </Banner>
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !(list.data ?? []).length && <Empty msg="Nenhum perfil encontrado." />}
 

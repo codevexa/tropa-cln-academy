@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money, durationBR } from '../lib/format';
-import { Modal, Field, Badge, Loading, ErrorBox, Empty, useAsync, useSubmit, Confirm } from '../ui/kit';
+import { Modal, Field, Badge, ErrorBox, Empty, useAsync, useSubmit, Confirm, SkeletonTabela } from '../ui/kit';
 import { IcPlus, IcEdit, IcTrash } from '../ui/icons';
 import type { Service } from '../lib/types';
 
@@ -40,7 +40,7 @@ export default function Servicos() {
       </div>
 
       {error && <div className="mb16"><ErrorBox msg={error} /></div>}
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !(list.data ?? []).length && <Empty msg="Nenhum serviço cadastrado." />}
 

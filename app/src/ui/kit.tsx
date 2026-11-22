@@ -63,6 +63,24 @@ export function Kpi({ label, value, hint, tone }: {
 
 /* --------------------------------------------------------- feedback ---- */
 export const Loading = () => <div className="spin" aria-label="Carregando" />;
+
+/** Esqueleto de lista/tabela: algumas barras no lugar das linhas que vêm. */
+export const SkeletonTabela = ({ linhas = 6 }: { linhas?: number }) => (
+  <div className="sk-tabela" aria-busy="true" aria-label="Carregando">
+    <div className="sk" />
+    {Array.from({ length: linhas }, (_, i) => <div className="sk" key={i} />)}
+  </div>
+);
+
+/** Esqueleto de painel: a faixa de indicadores e um bloco de gráfico. */
+export const SkeletonCartoes = ({ cartoes = 4, bloco = true }: { cartoes?: number; bloco?: boolean }) => (
+  <div aria-busy="true" aria-label="Carregando">
+    <div className="sk-cartoes">
+      {Array.from({ length: cartoes }, (_, i) => <div className="sk" key={i} />)}
+    </div>
+    {bloco && <div className="sk sk-bloco" />}
+  </div>
+);
 export const ErrorBox = ({ msg }: { msg: string }) => <div className="err">{msg}</div>;
 export const Empty = ({ msg }: { msg: string }) => <div className="empty">{msg}</div>;
 

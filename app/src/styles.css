@@ -243,6 +243,21 @@ textarea.inp{resize:vertical;min-height:72px}
 .spin{width:26px;height:26px;border:2px solid var(--line-2);border-top-color:#fff;border-radius:50%;
   animation:sp .7s linear infinite;margin:40px auto}
 @keyframes sp{to{transform:rotate(360deg)}}
+/* --- esqueletos de carregamento ------------------------------------------
+   Ocupam o lugar e mais ou menos a forma do conteúdo que vem, em vez de um
+   spinner no vazio. O brilho respeita quem pediu menos animação no sistema. */
+.sk{background:var(--line-2);border-radius:3px;position:relative;overflow:hidden}
+.sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);
+  animation:skb 1.3s infinite}
+@keyframes skb{to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){.sk::after{animation:none}}
+.sk-tabela{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+.sk-tabela .sk{height:38px}
+.sk-tabela .sk:first-child{height:30px;opacity:.75}
+.sk-cartoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px}
+.sk-cartoes .sk{height:74px}
+.sk-bloco{height:210px;margin-top:11px}
 .banner{display:flex;gap:11px;align-items:flex-start;padding:13px 15px;border-radius:var(--r);
   border:1px solid var(--line-2);background:var(--panel);font-size:.83rem;color:var(--muted)}
 .banner svg{width:16px;height:16px;flex:0 0 auto;margin-top:2px}

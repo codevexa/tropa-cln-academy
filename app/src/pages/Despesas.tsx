@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money, dateBR, label, isoDay, startOfMonth } from '../lib/format';
-import { Modal, Field, Badge, Kpi, Loading, ErrorBox, Empty, useAsync, useSubmit } from '../ui/kit';
+import { Modal, Field, Badge, Kpi, ErrorBox, Empty, useAsync, useSubmit, SkeletonTabela } from '../ui/kit';
 import { IcPlus, IcEdit } from '../ui/icons';
 import type { ExpenseFull, Expense, PaymentMethod } from '../lib/types';
 
@@ -45,7 +45,7 @@ export default function Despesas() {
         <input className="inp" type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ maxWidth: 170 }} />
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !rows.length && <Empty msg="Nenhuma despesa no período." />}
 

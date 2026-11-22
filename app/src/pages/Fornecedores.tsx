@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { phoneBR } from '../lib/format';
-import { Modal, Field, Badge, Loading, ErrorBox, Empty, useAsync, useSubmit } from '../ui/kit';
+import { Modal, Field, Badge, ErrorBox, Empty, useAsync, useSubmit, SkeletonTabela } from '../ui/kit';
 import { IcPlus, IcEdit } from '../ui/icons';
 import type { Supplier } from '../lib/types';
 
@@ -20,7 +20,7 @@ export default function Fornecedores() {
         <button className="btn pri sm" onClick={() => setCreating(true)}><IcPlus />Novo fornecedor</button>
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !(list.data ?? []).length && <Empty msg="Nenhum fornecedor cadastrado." />}
 

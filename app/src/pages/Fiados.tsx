@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money, dateBR, phoneBR, label } from '../lib/format';
-import { Modal, Field, Badge, Kpi, Loading, ErrorBox, Empty, useAsync, useSubmit } from '../ui/kit';
+import { Modal, Field, Badge, Kpi, ErrorBox, Empty, useAsync, useSubmit, SkeletonTabela } from '../ui/kit';
 import { IcPlus } from '../ui/icons';
 import type { DebtFull, Client, PaymentMethod } from '../lib/types';
 
@@ -42,7 +42,7 @@ export default function Fiados() {
         <button className={filter === 'quitados' ? 'on' : ''} onClick={() => setFilter('quitados')}>Quitados</button>
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !rows.length && <Empty msg="Nenhum fiado neste filtro." />}
 
@@ -190,7 +190,7 @@ function DebtHistory({ debt, onClose }: { debt: DebtFull; onClose: () => void })
         <Kpi label="Saldo" value={money(Number(debt.original_amount) - Number(debt.paid_amount))} tone="bad" />
       </div>
       {debt.notes && <p className="hint mb16">{debt.notes}</p>}
-      {pays.loading && <Loading />}
+      {pays.loading && <SkeletonTabela />}
       {!pays.loading && !(pays.data ?? []).length && <Empty msg="Nenhum pagamento registrado." />}
       {!!(pays.data ?? []).length && (
         <div className="tw">

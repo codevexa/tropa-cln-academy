@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { removerImagem } from '../lib/storage';
-import { Field, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner, Modal } from '../ui/kit';
+import { Field, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner, Modal, SkeletonTabela } from '../ui/kit';
 import { FotoUpload } from '../ui/FotoUpload';
 import { SeletorDeFotos, AMBIENTES_DO_SITE } from '../ui/FotosDoSite';
 import { IcPlus, IcTrash, IcEdit } from '../ui/icons';
@@ -231,7 +231,7 @@ function Galeria() {
       </div>
 
       {error && <div className="mb16"><ErrorBox msg={error} /></div>}
-      {lista.loading && <Loading />}
+      {lista.loading && <SkeletonTabela />}
       {!lista.loading && !itens.length && <Empty msg="Nenhuma foto na galeria. O site mostra espaços reservados." />}
 
       <div className="gal-admin">

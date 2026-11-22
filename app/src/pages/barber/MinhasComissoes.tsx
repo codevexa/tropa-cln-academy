@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { must } from '../../lib/db';
 import { useAuth } from '../../auth/AuthProvider';
 import { money, dateBR, label, isoDay, startOfMonth } from '../../lib/format';
-import { Kpi, Badge, Loading, ErrorBox, Empty, useAsync, Banner } from '../../ui/kit';
+import { Kpi, Badge, ErrorBox, Empty, useAsync, Banner, SkeletonTabela } from '../../ui/kit';
 import type { CommissionFull } from '../../lib/types';
 
 export default function MinhasComissoes() {
@@ -43,7 +43,7 @@ export default function MinhasComissoes() {
         <input className="inp" type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ maxWidth: 170 }} />
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !rows.length && <Empty msg="Nenhuma comissão no período." />}
 

@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { loadDashboard, type Period } from '../lib/db';
 import { money, num, startOfDay, endOfDay, startOfWeek, startOfMonth, startOfYear, isoDay } from '../lib/format';
-import { Kpi, Loading, ErrorBox, useAsync, Empty } from '../ui/kit';
+import { Kpi, ErrorBox, useAsync, Empty, SkeletonCartoes } from '../ui/kit';
 
 type Range = 'dia' | 'semana' | 'mes' | 'ano' | 'custom';
 const GOLD = '#c9a24a';
@@ -54,7 +54,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {loading && <Loading />}
+      {loading && <SkeletonCartoes cartoes={8} />}
       {error && <ErrorBox msg={error} />}
 
       {data && !loading && (

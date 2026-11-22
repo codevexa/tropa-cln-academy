@@ -2,7 +2,7 @@ import { supabase } from '../../lib/supabase';
 import { must } from '../../lib/db';
 import { useAuth } from '../../auth/AuthProvider';
 import { money, num, dateBR, timeBR, label, startOfDay, endOfDay, startOfMonth } from '../../lib/format';
-import { Kpi, Badge, Loading, ErrorBox, Empty, useAsync, Banner } from '../../ui/kit';
+import { Kpi, Badge, ErrorBox, Empty, useAsync, Banner, SkeletonCartoes } from '../../ui/kit';
 import type { AppointmentFull, Commission, CommissionRule } from '../../lib/types';
 
 export default function MeuPainel() {
@@ -50,7 +50,7 @@ export default function MeuPainel() {
     <>
       <h2 className="mb16">Olá, {barber.display_name || profile?.full_name}</h2>
 
-      {data.loading && <Loading />}
+      {data.loading && <SkeletonCartoes cartoes={4} />}
       {data.error && <ErrorBox msg={data.error} />}
 
       {d && (

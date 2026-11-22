@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { loadDashboard, type Period } from '../lib/db';
 import { money, num, isoDay, startOfDay, endOfDay, startOfMonth } from '../lib/format';
-import { Kpi, Loading, ErrorBox, Empty, useAsync } from '../ui/kit';
+import { Kpi, ErrorBox, Empty, useAsync, SkeletonCartoes } from '../ui/kit';
 
 type Tab = 'financeiro' | 'profissionais' | 'servicos' | 'pagamentos';
 
@@ -56,7 +56,7 @@ export default function Relatorios() {
         <button className="btn sm" onClick={exportCsv} disabled={!data}>Exportar CSV</button>
       </div>
 
-      {loading && <Loading />}
+      {loading && <SkeletonCartoes cartoes={6} />}
       {error && <ErrorBox msg={error} />}
 
       {data && !loading && (

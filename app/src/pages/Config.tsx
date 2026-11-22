@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { weekdayBR } from '../lib/format';
-import { Field, Loading, ErrorBox, useAsync, useSubmit, Banner } from '../ui/kit';
+import { Field, ErrorBox, useAsync, useSubmit, Banner, SkeletonTabela } from '../ui/kit';
 import type { BusinessHour } from '../lib/types';
 
 interface Business {
@@ -60,7 +60,7 @@ function Horarios() {
           horários para agendamento. Configure a jornada da barbearia abaixo.
         </Banner></div>
       )}
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {error && <div className="mb16"><ErrorBox msg={error} /></div>}
       {saved && <div className="mb16"><div className="ok-msg">Horários salvos.</div></div>}
 
@@ -114,7 +114,7 @@ function Dados() {
 
   return (
     <>
-      {cfg.loading && <Loading />}
+      {cfg.loading && <SkeletonTabela />}
       {error && <div className="mb16"><ErrorBox msg={error} /></div>}
       {saved && <div className="mb16"><div className="ok-msg">Dados salvos.</div></div>}
       <div className="card">

@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { must, dbError } from '../../lib/db';
 import { useAuth } from '../../auth/AuthProvider';
 import { weekdayBR, dateTimeBR } from '../../lib/format';
-import { Modal, Field, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner } from '../../ui/kit';
+import { Modal, Field, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner, SkeletonTabela } from '../../ui/kit';
 import { IcPlus, IcTrash } from '../../ui/icons';
 import type { BarberSchedule, BarberTimeOff, BusinessHour } from '../../lib/types';
 
@@ -86,7 +86,7 @@ export default function Disponibilidade({ barberId }: { barberId?: string }) {
             <h3>Folgas e bloqueios</h3>
             <button className="btn sm" onClick={() => setAddOff(true)}><IcPlus />Nova folga</button>
           </div>
-          {off.loading && <Loading />}
+          {off.loading && <SkeletonTabela />}
           {!off.loading && !(off.data ?? []).length && <Empty msg="Nenhuma folga futura." />}
           {(off.data ?? []).map((o) => (
             <div className="list-row" key={o.id}>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money, dateTimeBR, label, timeBR } from '../lib/format';
-import { Modal, Field, Badge, Kpi, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner } from '../ui/kit';
+import { Modal, Field, Badge, Kpi, ErrorBox, Empty, useAsync, useSubmit, Banner, SkeletonCartoes, SkeletonTabela } from '../ui/kit';
 import type { CashSession, Payment, Ticket } from '../lib/types';
 
 interface SessionDetail {
@@ -48,7 +48,7 @@ export default function Caixa() {
 
   return (
     <>
-      {cur.loading && <Loading />}
+      {cur.loading && <SkeletonCartoes cartoes={4} bloco={false} />}
       {cur.error && <ErrorBox msg={cur.error} />}
 
       {!cur.loading && !d?.session && (
@@ -130,7 +130,7 @@ export default function Caixa() {
 
       <div className="card mt24">
         <div className="card-h"><h3>Fechamentos anteriores</h3></div>
-        {hist.loading && <Loading />}
+        {hist.loading && <SkeletonTabela />}
         {!hist.loading && !(hist.data ?? []).length && <Empty msg="Nenhum caixa fechado ainda." />}
         {!!(hist.data ?? []).length && (
           <div className="tw">

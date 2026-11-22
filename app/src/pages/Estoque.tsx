@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money, num, dateTimeBR, label } from '../lib/format';
-import { Modal, Field, Badge, Kpi, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner } from '../ui/kit';
+import { Modal, Field, Badge, Kpi, ErrorBox, Empty, useAsync, useSubmit, Banner, SkeletonTabela } from '../ui/kit';
 import { IcPlus, IcEdit } from '../ui/icons';
 import type { Product, Supplier, StockMove, StockMoveType } from '../lib/types';
 
@@ -42,7 +42,7 @@ export default function Estoque() {
         </Banner></div>
       )}
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !rows.length && <Empty msg="Nenhum produto cadastrado." />}
 
@@ -228,7 +228,7 @@ function MoveHistory({ product, onClose }: { product: Product; onClose: () => vo
     <Modal title={`Movimentações — ${product.name}`} onClose={onClose} footer={
       <button className="btn ghost" onClick={onClose}>Fechar</button>
     }>
-      {moves.loading && <Loading />}
+      {moves.loading && <SkeletonTabela />}
       {!moves.loading && !(moves.data ?? []).length && <Empty msg="Nenhuma movimentação." />}
       {!!(moves.data ?? []).length && (
         <div className="tw">

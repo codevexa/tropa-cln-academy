@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money, dateTimeBR, label, timeBR } from '../lib/format';
-import { Modal, Field, Badge, Loading, ErrorBox, Empty, useAsync, useSubmit, Banner } from '../ui/kit';
+import { Modal, Field, Badge, ErrorBox, Empty, useAsync, useSubmit, Banner, SkeletonTabela } from '../ui/kit';
 import { IcPlus, IcTrash } from '../ui/icons';
 import type {
   TicketFull, Service, Barber, Client, PaymentMethod, CashSession, ClientPackageFull,
@@ -44,7 +44,7 @@ export default function Comandas() {
         </button>
       </div>
 
-      {list.loading && <Loading />}
+      {list.loading && <SkeletonTabela />}
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !(list.data ?? []).length && (
         <Empty msg={tab === 'aberta' ? 'Nenhuma comanda aberta.' : 'Nenhuma comanda fechada.'} />
@@ -133,7 +133,7 @@ function TicketModal({ id, onClose, onChanged }: { id: string; onClose: () => vo
         )}
       </>
     }>
-      {t.loading && <Loading />}
+      {t.loading && <SkeletonTabela />}
       {t.error && <ErrorBox msg={t.error} />}
       {error && <div className="mb16"><ErrorBox msg={error} /></div>}
 
