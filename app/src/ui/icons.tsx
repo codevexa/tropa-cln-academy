@@ -1,7 +1,12 @@
 type P = { className?: string };
+/* width/height são tamanho intrínseco, não estilo: qualquer regra de CSS
+   continua mandando mais (`.nav-item svg`, `.btn svg`, `.x svg`...). Sem
+   eles, um ícone usado fora desses seletores ficava sem limite nenhum e
+   esticava até ocupar o espaço disponível — era o caso da lupa da busca em
+   Clientes e em Meus clientes, que renderizava com centenas de pixels. */
 const S = (d: string) => (p: P) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
-       strokeLinecap="round" strokeLinejoin="round" className={p.className}
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+       strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={p.className}
        dangerouslySetInnerHTML={{ __html: d }} />
 );
 export const IcDash    = S('<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>');

@@ -91,7 +91,10 @@ input,select,textarea{font:inherit}
 h1,h2,h3,h4{font-family:'Oswald',sans-serif;text-transform:uppercase;font-weight:600;letter-spacing:.06em;line-height:1.15}
 h1{font-size:1.45rem}h2{font-size:1.12rem}h3{font-size:.95rem}
 .mut{color:var(--muted)}.mut2{color:var(--muted-2)}.tnum{font-variant-numeric:tabular-nums}
-.row{display:flex;align-items:center;gap:10px}.row-b{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.row{display:flex;align-items:center;gap:10px}
+/* ícone solto dentro de uma linha flex não deve encolher: sem isto a lupa
+   da busca ficava oval, espremida pelo campo de texto ao lado */
+.row>svg{flex:0 0 auto}.row-b{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .wrap{flex-wrap:wrap}.grow{flex:1}.right{margin-left:auto}.center{text-align:center}
 .gap4{gap:4px}.gap8{gap:8px}.gap16{gap:16px}
 .mt8{margin-top:8px}.mt16{margin-top:16px}.mt24{margin-top:24px}.mb16{margin-bottom:16px}

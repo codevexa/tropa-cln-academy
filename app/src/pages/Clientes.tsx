@@ -87,7 +87,7 @@ export default function Clientes() {
       <div className="row-b wrap mb16">
         <div className="row gap8 grow" style={{ maxWidth: 460 }}>
           <div className="row grow" style={{ position: 'relative' }}>
-            <IcSearch className="" />
+            <IcSearch />
             <input className="inp" placeholder="Buscar por nome ou telefone…"
                    value={q} onChange={(e) => setQ(e.target.value)} style={{ marginLeft: 8 }} />
           </div>
