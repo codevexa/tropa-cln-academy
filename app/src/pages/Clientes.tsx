@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money, dateBR, phoneBR, num } from '../lib/format';
@@ -14,28 +14,58 @@ export default function Clientes() {
   const [editing, setEditing] = useState<Client | null>(null);
   const [creating, setCreating] = useState(false);
   const [detail, setDetail] = useState<string | null>(null);
+  const abrirDetalhe = useCallback((id: string) => setDetail(id), []);
 
   const list = useAsync(
     () => must(supabase.from('v_client_stats').select('*').order('name')) as Promise<ClientStats[]>, []
   );
 
   const now = Date.now();
-  const rows = (list.data ?? []).filter((c) => {
-    if (q && !(`${c.name} ${c.phone ?? ''}`.toLowerCase().includes(q.toLowerCase()))) return false;
-    const days = c.last_visit ? (now - new Date(c.last_visit).getTime()) / DAY : Infinity;
-    if (filter === 'frequentes') return c.visits >= 3 && days <= 60;
-    if (filter === 'inativos') return c.visits > 0 && days > 60;
-    if (filter === 'aniversario') {
-      if (!c.birthdate) return false;
-      return new Date(c.birthdate).getMonth() === new Date().getMonth();
-    }
-    return true;
-  });
 
-  const freq = (list.data ?? []).filter((c) => c.visits >= 3 &&
-    c.last_visit && (now - new Date(c.last_visit).getTime()) / DAY <= 60).length;
-  const inat = (list.data ?? []).filter((c) => c.visits > 0 &&
-    c.last_visit && (now - new Date(c.last_visit).getTime()) / DAY > 60).length;
+  /* Debounce de 180 ms na busca.
+     Tentei antes com useDeferredValue e MEDI uma piora: 1724 -> 2426 ms para
+     digitar 9 letras com 2000 clientes. O valor diferido faz o React
+     renderizar duas vezes por tecla (uma com o valor velho, uma com o novo),
+     e quando o conteudo velho e uma tabela de 2000 linhas isso dobra a
+     reconciliacao. Com debounce a lista e refiltrada uma vez, quando o
+     usuario para de digitar. */
+  const [qBusca, setQBusca] = useState('');
+  useEffect(() => {
+    const t = window.setTimeout(() => setQBusca(q), 180);
+    return () => window.clearTimeout(t);
+  }, [q]);
+
+  /* Antes isto rodava no corpo do componente a cada tecla: tres varreduras
+     completas da lista, com `new Date` e `toLowerCase` por cliente em cada
+     uma. Agora e uma passagem so, memoizada, e o que nao depende da busca
+     nao e recalculado quando a busca muda. */
+  const preparados = useMemo(() => {
+    const mesAtual = new Date().getMonth();
+    return (list.data ?? []).map((c) => ({
+      c,
+      busca: `${c.name} ${c.phone ?? ''}`.toLowerCase(),
+      days: c.last_visit ? (now - new Date(c.last_visit).getTime()) / DAY : Infinity,
+      ehAniversariante: c.birthdate ? new Date(c.birthdate).getMonth() === mesAtual : false,
+    }));
+    // `now` muda a cada render; so a lista importa para este recorte
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list.data]);
+
+  const { freq, inat } = useMemo(() => ({
+    freq: preparados.filter((p) => p.c.visits >= 3 && p.c.last_visit && p.days <= 60).length,
+    inat: preparados.filter((p) => p.c.visits > 0 && p.c.last_visit && p.days > 60).length,
+  }), [preparados]);
+
+  const rows = useMemo(() => {
+    const termo = qBusca.trim().toLowerCase();
+    return preparados.filter((p) => {
+      if (termo && !p.busca.includes(termo)) return false;
+      if (filter === 'frequentes') return p.c.visits >= 3 && p.days <= 60;
+      if (filter === 'inativos') return p.c.visits > 0 && p.days > 60;
+      if (filter === 'aniversario') return p.ehAniversariante;
+      return true;
+    }).map((p) => p.c);
+  }, [preparados, qBusca, filter]);
 
   return (
     <>
@@ -70,37 +100,7 @@ export default function Clientes() {
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !rows.length && <Empty msg="Nenhum cliente encontrado." />}
 
-      {!!rows.length && (
-        <div className="tw">
-          <table>
-            <thead>
-              <tr>
-                <th>Nome</th><th>Telefone</th><th className="num">Visitas</th>
-                <th className="num">Total gasto</th><th>Última visita</th>
-                <th className="num">Frequência</th><th>Situação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((c) => {
-                const days = c.last_visit ? (now - new Date(c.last_visit).getTime()) / DAY : null;
-                const tone = days === null ? '' : days > 60 ? 'bad' : c.visits >= 3 ? 'ok' : 'info';
-                const text = days === null ? 'Sem visita' : days > 60 ? 'Inativo' : c.visits >= 3 ? 'Frequente' : 'Ativo';
-                return (
-                  <tr key={c.client_id} onClick={() => setDetail(c.client_id)} style={{ cursor: 'pointer' }}>
-                    <td>{c.name}</td>
-                    <td>{phoneBR(c.phone)}</td>
-                    <td className="num">{c.visits}</td>
-                    <td className="num">{money(c.total_spent)}</td>
-                    <td>{c.last_visit ? dateBR(c.last_visit) : '—'}</td>
-                    <td className="num">{c.avg_days_between ? `${c.avg_days_between} dias` : '—'}</td>
-                    <td><Badge text={text} tone={tone} /></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {!!rows.length && <TabelaClientes rows={rows} onAbrir={abrirDetalhe} />}
 
       {(creating || editing) && (
         <ClientForm client={editing} onClose={() => { setCreating(false); setEditing(null); }}
@@ -113,6 +113,46 @@ export default function Clientes() {
     </>
   );
 }
+
+/* A tabela so re-renderiza quando as linhas mudam de verdade. Sem isto,
+   cada tecla digitada na busca re-renderizava as 2000 linhas, mesmo com a
+   lista filtrada sendo exatamente a mesma. */
+const TabelaClientes = memo(function TabelaClientes({ rows, onAbrir }: {
+  rows: ClientStats[]; onAbrir: (id: string) => void;
+}) {
+  const now = Date.now();
+  return (
+    <div className="tw">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th><th>Telefone</th><th className="num">Visitas</th>
+            <th className="num">Total gasto</th><th>Última visita</th>
+            <th className="num">Frequência</th><th>Situação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((c) => {
+            const days = c.last_visit ? (now - new Date(c.last_visit).getTime()) / DAY : null;
+            const tone = days === null ? '' : days > 60 ? 'bad' : c.visits >= 3 ? 'ok' : 'info';
+            const text = days === null ? 'Sem visita' : days > 60 ? 'Inativo' : c.visits >= 3 ? 'Frequente' : 'Ativo';
+            return (
+              <tr key={c.client_id} onClick={() => onAbrir(c.client_id)} style={{ cursor: 'pointer' }}>
+                <td>{c.name}</td>
+                <td>{phoneBR(c.phone)}</td>
+                <td className="num">{c.visits}</td>
+                <td className="num">{money(c.total_spent)}</td>
+                <td>{c.last_visit ? dateBR(c.last_visit) : '—'}</td>
+                <td className="num">{c.avg_days_between ? `${c.avg_days_between} dias` : '—'}</td>
+                <td><Badge text={text} tone={tone} /></td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+});
 
 function ClientForm({ client, onClose, onDone }: {
   client: Client | null; onClose: () => void; onDone: () => void;
