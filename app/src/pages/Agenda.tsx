@@ -65,6 +65,23 @@ export default function Agenda({ barberOnly }: { barberOnly?: string }) {
 
   const reload = () => { appts.reload(); };
 
+  /* Troca otimista do status de um atendimento.
+     Só é usada nas transições que NÃO mexem em dinheiro — ver a lista
+     SEM_DINHEIRO no ApptModal. Pinta a mudança na hora e, se o servidor
+     recusar, o próprio reload do modal traz o estado real de volta. */
+  const pintarStatus = (id: string, status: AppointmentStatus) => {
+    const atual = appts.data;
+    if (!atual) return;
+    appts.setData(atual.map((a) => (a.id === id ? { ...a, status } : a)));
+  };
+
+  /* `editing` guarda o atendimento do momento do clique. Sem isto o modal
+     continuaria mostrando aquela cópia e a pintura otimista só apareceria na
+     grade atrás dele. Aqui ele passa a ler sempre a versão que está na lista. */
+  const emEdicao = editing
+    ? (appts.data ?? []).find((a) => a.id === editing.id) ?? editing
+    : null;
+
   return (
     <>
       <div className="row-b wrap mb16">
@@ -101,8 +118,8 @@ export default function Agenda({ barberOnly }: { barberOnly?: string }) {
                   onSlot={isStaff ? (at, key) => setCreating({ at, barber: view === 'semana' ? undefined : key }) : undefined} />
       )}
 
-      {editing && (
-        <ApptModal appt={editing} onClose={() => setEditing(null)}
+      {emEdicao && (
+        <ApptModal appt={emEdicao} aoPintar={pintarStatus} onClose={() => setEditing(null)}
                    onSaved={() => { setEditing(null); reload(); }} />
       )}
       {creating && (
@@ -218,8 +235,21 @@ function MonthList({ items, onPick }: { items: AppointmentFull[]; onPick: (a: Ap
 /* ----------------------------------------------------- detalhe / status -- */
 const FLOW: AppointmentStatus[] = ['aguardando', 'confirmado', 'em_atendimento', 'concluido'];
 
-function ApptModal({ appt, onClose, onSaved }: {
-  appt: AppointmentFull; onClose: () => void; onSaved: () => void;
+/* Transições que não têm efeito financeiro nenhum: podem ser pintadas na
+   tela antes da resposta do servidor.
+
+   `concluido` fica DE FORA de propósito. Concluir dispara
+   trg_appt_bill -> bill_appointment(), que lança o atendimento na comanda,
+   e só funciona se houver caixa aberto. Mostrar "concluído" na hora faria o
+   usuário acreditar que a comanda foi lançada mesmo quando não foi — e
+   faturamento é exatamente onde adivinhar é proibido. */
+const SEM_DINHEIRO: AppointmentStatus[] = ['aguardando', 'confirmado', 'em_atendimento', 'cancelado'];
+
+function ApptModal({ appt, aoPintar, onClose, onSaved }: {
+  appt: AppointmentFull;
+  aoPintar: (id: string, status: AppointmentStatus) => void;
+  onClose: () => void;
+  onSaved: () => void;
 }) {
   const { isStaff } = useAuth();
   const { busy, error, setError, run } = useSubmit();
@@ -229,8 +259,13 @@ function ApptModal({ appt, onClose, onSaved }: {
   const setStatus = (status: AppointmentStatus) => run(null, async () => {
     const patch: Record<string, unknown> = { status };
     if (status === 'cancelado') patch.cancel_reason = reason || null;
+    if (SEM_DINHEIRO.includes(status)) aoPintar(appt.id, status);
     const { error: e } = await supabase.from('appointments').update(patch).eq('id', appt.id);
-    if (e) throw new Error(dbError(e));
+    if (e) {
+      // servidor recusou: desfaz a pintura voltando ao status que estava
+      if (SEM_DINHEIRO.includes(status)) aoPintar(appt.id, appt.status);
+      throw new Error(dbError(e));
+    }
     onSaved();
   });
 
