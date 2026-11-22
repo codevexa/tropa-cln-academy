@@ -2,7 +2,10 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { must, dbError } from '../lib/db';
 import { money, dateBR, phoneBR, num } from '../lib/format';
-import { Modal, Field, Badge, Loading, ErrorBox, Empty, useAsync, useSubmit, Kpi, SkeletonTabela } from '../ui/kit';
+import {
+  Modal, Field, Badge, Loading, ErrorBox, Empty, useAsync, useSubmit, Kpi, SkeletonTabela,
+  useListaProgressiva, FimDaLista,
+} from '../ui/kit';
 import { IcPlus, IcSearch } from '../ui/icons';
 import type { ClientStats, Client, AppointmentFull } from '../lib/types';
 
@@ -15,6 +18,7 @@ export default function Clientes() {
   const [creating, setCreating] = useState(false);
   const [detail, setDetail] = useState<string | null>(null);
   const abrirDetalhe = useCallback((id: string) => setDetail(id), []);
+
 
   const list = useAsync(
     () => must(supabase.from('v_client_stats').select('client_id,name,phone,birthdate,visits,total_spent,last_visit,first_visit,avg_days_between').order('name')) as Promise<ClientStats[]>, []
@@ -67,6 +71,10 @@ export default function Clientes() {
     }).map((p) => p.c);
   }, [preparados, qBusca, filter]);
 
+  /* Só um pedaço da lista vai para o DOM de cada vez; o resto entra ao rolar.
+     Busca e filtros continuam percorrendo a lista inteira. */
+  const pagina = useListaProgressiva(rows);
+
   return (
     <>
       <div className="grid g4 mb16">
@@ -100,7 +108,12 @@ export default function Clientes() {
       {list.error && <ErrorBox msg={list.error} />}
       {!list.loading && !rows.length && <Empty msg="Nenhum cliente encontrado." />}
 
-      {!!rows.length && <TabelaClientes rows={rows} onAbrir={abrirDetalhe} />}
+      {!!rows.length && (
+        <>
+          <TabelaClientes rows={pagina.visiveis} onAbrir={abrirDetalhe} />
+          <FimDaLista estado={pagina} />
+        </>
+      )}
 
       {(creating || editing) && (
         <ClientForm client={editing} onClose={() => { setCreating(false); setEditing(null); }}

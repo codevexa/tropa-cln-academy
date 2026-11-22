@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, type ReactNode, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { IcX, IcAlert, IcInfo } from './icons';
 
 /* ----------------------------------------------------------- Modal ----- */
@@ -222,6 +222,73 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
   }, [chave, nonce]);
 
   return { data: atual.data, loading: atual.loading, error: atual.error, reload, setData };
+}
+
+/**
+ * Renderização progressiva de listas longas.
+ *
+ * Uma tabela de 2000 clientes vira ~14 mil elementos no DOM, e o navegador
+ * paga por isso em cada render. Aqui só um pedaço vai para a tela; o resto
+ * entra conforme o usuário chega ao fim da lista, detectado por um sentinela
+ * com IntersectionObserver — sem biblioteca e sem mexer na rolagem.
+ *
+ * Preferi isto a virtualização de verdade porque a tabela usa largura
+ * automática de coluna: com janelamento, as colunas mudariam de largura
+ * enquanto se rola, já que o navegador mede só as células renderizadas.
+ * Evitar isso exigiria fixar a largura das colunas, que é mudança visual.
+ *
+ * O filtro e a busca continuam percorrendo a lista inteira; o que é limitado
+ * é apenas quanto vai para o DOM de uma vez.
+ */
+export function useListaProgressiva<T>(itens: T[], passo = 60) {
+  const [limite, setLimite] = useState(passo);
+  const sentinela = useRef<HTMLDivElement | null>(null);
+
+  // lista nova (busca ou filtro mudou): volta ao primeiro pedaço
+  const assinatura = itens.length;
+  const anterior = useRef(assinatura);
+  if (anterior.current !== assinatura) {
+    anterior.current = assinatura;
+    if (limite !== passo) setLimite(passo);
+  }
+
+  useEffect(() => {
+    const alvo = sentinela.current;
+    if (!alvo || limite >= itens.length) return;
+    if (typeof IntersectionObserver === 'undefined') { setLimite(itens.length); return; }
+    const io = new IntersectionObserver((entradas) => {
+      if (entradas.some((e) => e.isIntersecting)) {
+        setLimite((n) => Math.min(n + passo, itens.length));
+      }
+    }, { rootMargin: '400px' });
+    io.observe(alvo);
+    return () => io.disconnect();
+  }, [limite, itens.length, passo]);
+
+  return {
+    visiveis: limite >= itens.length ? itens : itens.slice(0, limite),
+    total: itens.length,
+    temMais: limite < itens.length,
+    sentinela,
+    mostrarTudo: () => setLimite(itens.length),
+  };
+}
+
+/** Rodapé da lista progressiva: sentinela invisível mais o contador. */
+export function FimDaLista({ estado }: {
+  estado: { total: number; temMais: boolean; sentinela: React.RefObject<HTMLDivElement>; visiveis: unknown[] };
+}) {
+  if (!estado.total) return null;
+  return (
+    <>
+      <div ref={estado.sentinela} aria-hidden="true" style={{ height: 1 }} />
+      <p className="hint" style={{ textAlign: 'center', marginTop: 12 }}>
+        {estado.temMais
+          ? `Mostrando ${estado.visiveis.length} de ${estado.total} — role para ver mais`
+          : `${estado.total} ${estado.total === 1 ? 'registro' : 'registros'}`}
+      </p>
+    </>
+  );
 }
 
 /** Envolve um submit: trava o botão, captura erro e devolve o estado. */
