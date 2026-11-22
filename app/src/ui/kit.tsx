@@ -121,6 +121,30 @@ interface EntradaCache {
 }
 const cacheLeitura = new Map<string, EntradaCache>();
 
+/**
+ * Teto de espera para uma leitura.
+ *
+ * Sem isto, uma consulta que nunca responde — rede que caiu no meio, conexão
+ * presa, banco fora do ar — deixava a tela num esqueleto para sempre, sem
+ * erro nenhum. Vinte segundos é folgado para a consulta mais pesada do
+ * painel em 4G ruim, e curto o bastante para o usuário saber que deu errado
+ * e poder tentar de novo.
+ */
+const TETO_MS = 20000;
+
+function comTeto<T>(p: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(
+      () => reject(new Error('A consulta demorou demais. Verifique sua conexão e tente de novo.')),
+      TETO_MS,
+    );
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); },
+    );
+  });
+}
+
 /** Esquece tudo o que está em cache. Usado no logout. */
 export function limparCacheDeLeitura() {
   cacheLeitura.clear();
@@ -169,7 +193,7 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
 
     /* Se já existe uma consulta igual no ar, aproveita a mesma promessa em
        vez de disparar outra — duas telas montando juntas pedem uma vez. */
-    const promessa = guardado?.voo ?? (fn() as Promise<unknown>);
+    const promessa = guardado?.voo ?? comTeto(fn() as Promise<unknown>);
     if (guardado) guardado.voo = promessa;
     else cacheLeitura.set(chave, { dados: undefined, quando: 0, voo: promessa });
 
