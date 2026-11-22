@@ -181,7 +181,7 @@ function RulesModal({ barber, onClose, onDone }: { barber: Row; onClose: () => v
   const { busy, error, run } = useSubmit();
 
   const services = useAsync(
-    () => must(supabase.from('services').select('*').eq('active', true).order('order_index')) as Promise<Service[]>, []
+    () => must(supabase.from('services').select('id,name,duration_min,price,category,active,order_index').eq('active', true).order('order_index')) as Promise<Service[]>, []
   );
   const overrides = useAsync(
     () => must(supabase.from('barber_service_commissions')
@@ -291,10 +291,10 @@ function RulesModal({ barber, onClose, onDone }: { barber: Row; onClose: () => v
 /* -------------------------------------------------------------- acessos -- */
 function Acessos() {
   const list = useAsync(
-    () => must(supabase.from('profiles').select('*').order('full_name')) as Promise<Profile[]>, []
+    () => must(supabase.from('profiles').select('id,role,full_name,phone,email,active,permissions,created_at').order('full_name')) as Promise<Profile[]>, []
   );
   const barbers = useAsync(
-    () => must(supabase.from('barbers').select('*').order('order_index')) as Promise<Barber[]>, []
+    () => must(supabase.from('barbers').select('id,profile_id,display_name,specialty,bio,photo_url,active,order_index').order('order_index')) as Promise<Barber[]>, []
   );
   const [editing, setEditing] = useState<Profile | null>(null);
 

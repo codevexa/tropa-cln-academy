@@ -25,7 +25,7 @@ export default function Config() {
 
 function Horarios() {
   const list = useAsync(
-    () => must(supabase.from('business_hours').select('*').order('weekday')) as Promise<BusinessHour[]>, []
+    () => must(supabase.from('business_hours').select('weekday,opens,closes,closed').order('weekday')) as Promise<BusinessHour[]>, []
   );
   const [rows, setRows] = useState<BusinessHour[]>([]);
   const { busy, error, run } = useSubmit();
@@ -96,7 +96,7 @@ function Horarios() {
 
 function Dados() {
   const cfg = useAsync(
-    () => must(supabase.from('settings').select('*').eq('key', 'business').maybeSingle()) as Promise<{ value: Business } | null>, []
+    () => must(supabase.from('settings').select('key,value').eq('key', 'business').maybeSingle()) as Promise<{ value: Business } | null>, []
   );
   const [v, setV] = useState<Business>({});
   const { busy, error, run } = useSubmit();

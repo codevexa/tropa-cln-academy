@@ -176,7 +176,7 @@ function PayDebt({ debt, onClose, onDone }: { debt: DebtFull; onClose: () => voi
 
 function DebtHistory({ debt, onClose }: { debt: DebtFull; onClose: () => void }) {
   const pays = useAsync(
-    () => must(supabase.from('debt_payments').select('*').eq('debt_id', debt.id)
+    () => must(supabase.from('debt_payments').select('id,amount,method,paid_at').eq('debt_id', debt.id)
       .order('paid_at', { ascending: false })) as Promise<
         { id: string; amount: number; method: PaymentMethod; paid_at: string }[]>, [debt.id]
   );

@@ -99,7 +99,7 @@ function SellPackage({ onClose, onDone }: { onClose: () => void; onDone: () => v
     () => must(supabase.from('clients').select('id,name').order('name').limit(500)) as Promise<Client[]>, []
   );
   const packages = useAsync(
-    () => must(supabase.from('packages').select('*').eq('active', true).order('name')) as Promise<Package[]>, []
+    () => must(supabase.from('packages').select('id,name,description,price,uses_total,validity_days,active').eq('active', true).order('name')) as Promise<Package[]>, []
   );
   const pkg = packages.data?.find((p) => p.id === packageId);
 
@@ -152,7 +152,7 @@ function Catalogo() {
   const [editing, setEditing] = useState<Package | null>(null);
   const [creating, setCreating] = useState(false);
   const list = useAsync(
-    () => must(supabase.from('packages').select('*').order('name')) as Promise<Package[]>, []
+    () => must(supabase.from('packages').select('id,name,description,price,uses_total,validity_days,active').order('name')) as Promise<Package[]>, []
   );
 
   return (
@@ -205,7 +205,7 @@ function PackageForm({ pkg, onClose, onDone }: { pkg: Package | null; onClose: (
   const { busy, error, run } = useSubmit();
 
   const services = useAsync(
-    () => must(supabase.from('services').select('*').eq('active', true).order('order_index')) as Promise<Service[]>, []
+    () => must(supabase.from('services').select('id,name,duration_min,price,category,active,order_index').eq('active', true).order('order_index')) as Promise<Service[]>, []
   );
   useAsync(async () => {
     if (!pkg) return [];

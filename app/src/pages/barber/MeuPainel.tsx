@@ -23,7 +23,7 @@ export default function MeuPainel() {
       must(supabase.from('commissions').select('amount, status, generated_at')
         .eq('barber_id', barber.id)
         .gte('generated_at', startOfMonth(now).toISOString())) as Promise<Commission[]>,
-      must(supabase.from('barber_commission_rules').select('*')
+      must(supabase.from('barber_commission_rules').select('barber_id,basis,value')
         .eq('barber_id', barber.id).maybeSingle()) as Promise<CommissionRule | null>,
       must(supabase.from('commission_payouts').select('id, amount, paid_at, method')
         .eq('barber_id', barber.id).order('paid_at', { ascending: false }).limit(5)) as Promise<

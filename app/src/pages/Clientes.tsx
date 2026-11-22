@@ -17,7 +17,7 @@ export default function Clientes() {
   const abrirDetalhe = useCallback((id: string) => setDetail(id), []);
 
   const list = useAsync(
-    () => must(supabase.from('v_client_stats').select('*').order('name')) as Promise<ClientStats[]>, []
+    () => must(supabase.from('v_client_stats').select('client_id,name,phone,birthdate,visits,total_spent,last_visit,first_visit,avg_days_between').order('name')) as Promise<ClientStats[]>, []
   );
 
   const now = Date.now();
@@ -205,10 +205,10 @@ function ClientDetail({ id, onClose, onEdit }: {
   id: string; onClose: () => void; onEdit: (c: Client) => void;
 }) {
   const client = useAsync(
-    () => must(supabase.from('clients').select('*').eq('id', id).single()) as Promise<Client>, [id]
+    () => must(supabase.from('clients').select('id,name,phone,birthdate,notes,preferences,created_at').eq('id', id).single()) as Promise<Client>, [id]
   );
   const stats = useAsync(
-    () => must(supabase.from('v_client_stats').select('*').eq('client_id', id).maybeSingle()) as Promise<ClientStats | null>, [id]
+    () => must(supabase.from('v_client_stats').select('client_id,name,phone,birthdate,visits,total_spent,last_visit,first_visit,avg_days_between').eq('client_id', id).maybeSingle()) as Promise<ClientStats | null>, [id]
   );
   const history = useAsync(
     () => must(supabase.from('appointments')

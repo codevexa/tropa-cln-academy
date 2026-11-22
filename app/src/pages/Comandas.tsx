@@ -16,7 +16,7 @@ export default function Comandas() {
   const [creating, setCreating] = useState(false);
 
   const cash = useAsync(
-    () => must(supabase.from('cash_sessions').select('*').eq('status', 'aberto').maybeSingle()) as Promise<CashSession | null>,
+    () => must(supabase.from('cash_sessions').select('id,opened_by,opened_at,opening_amount,closed_by,closed_at,closing_amount,status,notes').eq('status', 'aberto').maybeSingle()) as Promise<CashSession | null>,
     []
   );
   const list = useAsync(
@@ -232,10 +232,10 @@ function AddItem({ ticket, onClose, onDone }: { ticket: TicketFull; onClose: () 
   const { busy, error, run } = useSubmit();
 
   const services = useAsync(
-    () => must(supabase.from('services').select('*').eq('active', true).order('order_index')) as Promise<Service[]>, []
+    () => must(supabase.from('services').select('id,name,duration_min,price,category,active,order_index').eq('active', true).order('order_index')) as Promise<Service[]>, []
   );
   const barbers = useAsync(
-    () => must(supabase.from('barbers').select('*').eq('active', true).order('order_index')) as Promise<Barber[]>, []
+    () => must(supabase.from('barbers').select('id,profile_id,display_name,specialty,bio,photo_url,active,order_index').eq('active', true).order('order_index')) as Promise<Barber[]>, []
   );
   const pkgs = useAsync(async () => {
     if (!ticket.client_id) return [] as ClientPackageFull[];
@@ -377,7 +377,7 @@ function NewTicket({ cash, onClose, onDone }: {
     () => must(supabase.from('clients').select('id,name').order('name').limit(500)) as Promise<Client[]>, []
   );
   const barbers = useAsync(
-    () => must(supabase.from('barbers').select('*').eq('active', true).order('order_index')) as Promise<Barber[]>, []
+    () => must(supabase.from('barbers').select('id,profile_id,display_name,specialty,bio,photo_url,active,order_index').eq('active', true).order('order_index')) as Promise<Barber[]>, []
   );
 
   const save = () => run(null, async () => {

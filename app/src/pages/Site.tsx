@@ -198,7 +198,7 @@ function Contato() {
 /* ------------------------------------------------------------ galeria --- */
 function Galeria() {
   const lista = useAsync(
-    () => must(supabase.from('gallery_images').select('*').order('order_index')) as Promise<GalleryImage[]>,
+    () => must(supabase.from('gallery_images').select('id,url,caption,order_index,active,created_at').order('order_index')) as Promise<GalleryImage[]>,
     []
   );
   const [editando, setEditando] = useState<GalleryImage | null>(null);

@@ -92,7 +92,7 @@ function ExpenseForm({ expense, onClose, onDone }: {
   const { busy, error, run } = useSubmit();
 
   const cats = useAsync(
-    () => must(supabase.from('expense_categories').select('*').order('name')) as Promise<{ id: string; name: string }[]>, []
+    () => must(supabase.from('expense_categories').select('id,name').order('name')) as Promise<{ id: string; name: string }[]>, []
   );
 
   const save = () => run(null, async () => {

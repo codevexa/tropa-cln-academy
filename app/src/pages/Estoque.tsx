@@ -108,7 +108,7 @@ function ProductForm({ product, onClose, onDone }: {
   const { busy, error, run } = useSubmit();
 
   const suppliers = useAsync(
-    () => must(supabase.from('suppliers').select('*').eq('active', true).order('name')) as Promise<Supplier[]>, []
+    () => must(supabase.from('suppliers').select('id,name,phone,email,notes,active').eq('active', true).order('name')) as Promise<Supplier[]>, []
   );
 
   const save = () => run(null, async () => {
@@ -221,7 +221,7 @@ function MoveForm({ product, onClose, onDone }: { product: Product; onClose: () 
 
 function MoveHistory({ product, onClose }: { product: Product; onClose: () => void }) {
   const moves = useAsync(
-    () => must(supabase.from('stock_moves').select('*').eq('product_id', product.id)
+    () => must(supabase.from('stock_moves').select('id,product_id,type,qty,unit_cost,reason,created_at').eq('product_id', product.id)
       .order('created_at', { ascending: false }).limit(100)) as Promise<StockMove[]>, [product.id]
   );
   return (

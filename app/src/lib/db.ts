@@ -54,12 +54,14 @@ export async function loadDashboard(p: Period): Promise<DashboardData> {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const yearStart = new Date(now.getFullYear(), 0, 1);
 
-  const [pay, payToday, payMonth, payYear, appts, exp, comm, items, clientsNew, tickets] =
+  /* payToday, payMonth e payYear eram três consultas separadas, e as duas
+     primeiras são subconjuntos da terceira: tudo que caiu hoje caiu neste mês
+     e neste ano. Agora é uma consulta só e os três totais saem dela, com a
+     mesma conta de antes. Três idas e voltas a menos em cada abertura. */
+  const [pay, payYear, appts, exp, comm, items, clientsNew, tickets] =
     await Promise.all([
       must(supabase.from('payments').select('amount, method, paid_at')
         .gte('paid_at', p.from.toISOString()).lte('paid_at', p.to.toISOString())),
-      must(supabase.from('payments').select('amount').gte('paid_at', dayStart.toISOString())),
-      must(supabase.from('payments').select('amount').gte('paid_at', monthStart.toISOString())),
       must(supabase.from('payments').select('amount, paid_at').gte('paid_at', yearStart.toISOString())),
       must(supabase.from('appointments').select('id, client_id, status')
         .eq('status', 'concluido')
@@ -149,11 +151,15 @@ export async function loadDashboard(p: Period): Promise<DashboardData> {
   const closed = tickets as { total: number }[];
   const ticketAvg = closed.length ? closed.reduce((a, t) => a + Number(t.total), 0) / closed.length : 0;
 
+  const linhasAno = payYear as { amount: number; paid_at: string }[];
+  const somaDesde = (inicio: Date) =>
+    linhasAno.reduce((a, r) => (new Date(r.paid_at) >= inicio ? a + Number(r.amount) : a), 0);
+
   return {
     revenue,
-    revenueToday: sum(payToday as { amount: number }[]),
-    revenueMonth: sum(payMonth as { amount: number }[]),
-    revenueYear: sum(payYear as { amount: number }[]),
+    revenueToday: somaDesde(dayStart),
+    revenueMonth: somaDesde(monthStart),
+    revenueYear: sum(linhasAno),
     appointments: (appts as unknown[]).length,
     ticketAvg,
     expenses,

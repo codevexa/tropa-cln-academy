@@ -10,7 +10,7 @@ export default function Fornecedores() {
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [creating, setCreating] = useState(false);
   const list = useAsync(
-    () => must(supabase.from('suppliers').select('*').order('name')) as Promise<Supplier[]>, []
+    () => must(supabase.from('suppliers').select('id,name,phone,email,notes,active').order('name')) as Promise<Supplier[]>, []
   );
 
   return (

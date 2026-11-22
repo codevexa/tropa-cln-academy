@@ -12,16 +12,16 @@ export default function Disponibilidade({ barberId }: { barberId?: string }) {
   const id = barberId ?? barber?.id;
 
   const hours = useAsync(
-    () => must(supabase.from('business_hours').select('*').order('weekday')) as Promise<BusinessHour[]>, []
+    () => must(supabase.from('business_hours').select('weekday,opens,closes,closed').order('weekday')) as Promise<BusinessHour[]>, []
   );
   const sched = useAsync(async () => {
     if (!id) return [];
-    return must(supabase.from('barber_schedules').select('*').eq('barber_id', id)
+    return must(supabase.from('barber_schedules').select('id,barber_id,weekday,starts,ends,active').eq('barber_id', id)
       .order('weekday')) as Promise<BarberSchedule[]>;
   }, [id ?? '']);
   const off = useAsync(async () => {
     if (!id) return [];
-    return must(supabase.from('barber_time_off').select('*').eq('barber_id', id)
+    return must(supabase.from('barber_time_off').select('id,barber_id,starts_at,ends_at,reason').eq('barber_id', id)
       .gte('ends_at', new Date().toISOString()).order('starts_at')) as Promise<BarberTimeOff[]>;
   }, [id ?? '']);
 

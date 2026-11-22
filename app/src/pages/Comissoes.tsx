@@ -12,7 +12,7 @@ export default function Comissoes() {
   const [paying, setPaying] = useState(false);
 
   const barbers = useAsync(
-    () => must(supabase.from('barbers').select('*').order('order_index')) as Promise<Barber[]>, []
+    () => must(supabase.from('barbers').select('id,profile_id,display_name,specialty,bio,photo_url,active,order_index').order('order_index')) as Promise<Barber[]>, []
   );
   const list = useAsync(async () => {
     let q = supabase.from('commissions')

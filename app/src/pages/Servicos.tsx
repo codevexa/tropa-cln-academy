@@ -15,7 +15,7 @@ export default function Servicos() {
   const { error, run } = useSubmit();
 
   const list = useAsync(
-    () => must(supabase.from('services').select('*').order('order_index')) as Promise<Service[]>, []
+    () => must(supabase.from('services').select('id,name,duration_min,price,category,active,order_index').order('order_index')) as Promise<Service[]>, []
   );
 
   const toggle = (s: Service) => run(null, async () => {

@@ -28,7 +28,7 @@ export default function Agenda({ barberOnly }: { barberOnly?: string }) {
   }, [view, anchor]);
 
   const barbers = useAsync(
-    () => must(supabase.from('barbers').select('*').eq('active', true).order('order_index')),
+    () => must(supabase.from('barbers').select('id,profile_id,display_name,specialty,bio,photo_url,active,order_index').eq('active', true).order('order_index')),
     []
   );
 
@@ -322,7 +322,7 @@ function NewApptModal({ init, barbers, onClose, onSaved }: {
   const [notes, setNotes] = useState('');
 
   const services = useAsync(
-    () => must(supabase.from('services').select('*').eq('active', true).order('order_index')) as Promise<Service[]>, []
+    () => must(supabase.from('services').select('id,name,duration_min,price,category,active,order_index').eq('active', true).order('order_index')) as Promise<Service[]>, []
   );
   const clients = useAsync(
     () => must(supabase.from('clients').select('id,name,phone').order('name').limit(500)) as Promise<Client[]>, []

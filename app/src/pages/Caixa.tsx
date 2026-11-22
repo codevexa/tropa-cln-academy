@@ -13,14 +13,14 @@ interface SessionDetail {
 
 async function loadCurrent(): Promise<SessionDetail> {
   const s = await must(
-    supabase.from('cash_sessions').select('*').eq('status', 'aberto')
+    supabase.from('cash_sessions').select('id,opened_by,opened_at,opening_amount,closed_by,closed_at,closing_amount,status,notes').eq('status', 'aberto')
       .order('opened_at', { ascending: false }).limit(1).maybeSingle()
   ) as CashSession | null;
   if (!s) return { session: null, payments: [], openTickets: [] };
   const [payments, openTickets] = await Promise.all([
     must(supabase.from('payments').select('*, tickets(code)')
       .eq('cash_session_id', s.id).order('paid_at', { ascending: false })),
-    must(supabase.from('tickets').select('*').eq('cash_session_id', s.id).eq('status', 'aberta')),
+    must(supabase.from('tickets').select('id,code,client_id,barber_id,cash_session_id,status,discount,subtotal,total,paid_total,opened_at,closed_at,notes').eq('cash_session_id', s.id).eq('status', 'aberta')),
   ]);
   return {
     session: s,
@@ -32,7 +32,7 @@ async function loadCurrent(): Promise<SessionDetail> {
 export default function Caixa() {
   const cur = useAsync(loadCurrent, []);
   const hist = useAsync(
-    () => must(supabase.from('cash_sessions').select('*').eq('status', 'fechado')
+    () => must(supabase.from('cash_sessions').select('id,opened_by,opened_at,opening_amount,closed_by,closed_at,closing_amount,status,notes').eq('status', 'fechado')
       .order('closed_at', { ascending: false }).limit(30)) as Promise<CashSession[]>, []
   );
   const [openModal, setOpenModal] = useState(false);
