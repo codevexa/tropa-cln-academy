@@ -12,7 +12,10 @@ export default function Login() {
   return (
     <div className="login">
       <div className="login-card">
-        <img src="/logo-badge.png" alt="Diamond Barbearia" width={92} height={92} />
+        <picture>
+          <source srcSet="/logo-badge-184.webp" type="image/webp" />
+          <img src="/logo-badge-184.png" alt="Diamond Barbearia" width={92} height={92} />
+        </picture>
         <h1>Diamond Barbearia</h1>
         <p>Sistema de gestão</p>
 

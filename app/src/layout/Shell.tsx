@@ -79,7 +79,10 @@ export default function Shell({ children }: { children: ReactNode }) {
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <aside className={'side' + (open ? ' open' : '')}>
         <div className="side-top">
-          <img src="/logo-badge.png" alt="" width={38} height={38} />
+          <picture>
+            <source srcSet="/logo-badge-184.webp" type="image/webp" />
+            <img src="/logo-badge-184.png" alt="" width={38} height={38} />
+          </picture>
           <div><b>Diamond</b><span>Gestão</span></div>
         </div>
 

@@ -485,7 +485,7 @@
     galEl.innerHTML = GAL.map(function (g) {
       if (g.slot) {
         return '<div class="gal-item gal-slot ' + g.cls + '" data-rv="fade-u">' +
-          '<img src="assets/img/diamond-mark.png" alt="" width="40" height="31" loading="lazy">' +
+          '<img src="assets/img/diamond-mark-148.webp" alt="" width="40" height="31" loading="lazy">' +
           '<span>' + g.txt + '<br>espaço reservado</span></div>';
       }
       var idx = lbItems.length;
