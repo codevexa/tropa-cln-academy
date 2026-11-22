@@ -5,7 +5,22 @@
    bloqueia a renderizacao. Agora os arquivos sao servidos do mesmo dominio
    do site, ja no cache do navegador junto com o resto.
    Sao fontes variaveis: um arquivo por familia cobre todos os pesos que as
-   telas usam (Inter 300-600, Oswald 200-700). */
+   telas usam (Inter 300-600, Oswald 200-700).
+
+   MEDIDO DEPOIS, EM PRODUCAO — correcao do que eu disse no commit:
+   o CLS do site NAO caiu. Em producao ele ficou em 0.0447, praticamente
+   igual aos 0.0448 de antes. O 0.0007 que eu tinha medido veio de servir
+   os arquivos de localhost, onde as fontes chegavam antes da primeira
+   pintura; com a CDN a pagina pinta mais cedo (FCP 844 ms em vez de
+   1452 ms) e a troca de fonte volta a aparecer.
+   O deslocamento e de 0.044 no .hero-grid, por volta de 1645 ms. Fica
+   anotado e nao corrigido: 0.0447 ja esta dentro da faixa boa (<0.1) e a
+   correcao de verdade seria sobrepor metricas da fonte de reserva
+   (size-adjust, ascent-override), o que mexe no desenho do texto nos
+   primeiros instantes e e decisao visual, nao de desempenho.
+   O que o auto-hospedar entregou de fato: dois dominios externos a menos,
+   uma requisicao bloqueante a menos e as fontes no mesmo cache do resto.
+   */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
