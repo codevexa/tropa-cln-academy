@@ -535,7 +535,23 @@
   var nav = document.getElementById('nav'), burger = document.getElementById('burger'),
       drawer = document.getElementById('drawer'), lastY = 0;
 
-  function onScroll() {
+  /* O navegador dispara dezenas de eventos de scroll por quadro. Este
+     trecho lia `scrollHeight` e `innerHeight` em cada um deles, e ler essas
+     duas propriedades obriga o navegador a recalcular o layout na hora. Com
+     os reveals e os ScrollTriggers da página isso era o maior custo de
+     travamento do site: 731 ms em tarefas longas, medido em Slow 4G com CPU
+     4x mais lenta.
+     Agora o trabalho é agendado para o próximo quadro, então a medição do
+     layout acontece no máximo uma vez por quadro em vez de uma vez por
+     evento. O valor continua sendo lido de verdade a cada quadro, e não
+     guardado em cache, porque a altura da página muda enquanto as imagens
+     com lazy loading entram e enquanto o GSAP fixa seções. */
+  var elProgresso = document.getElementById('progress');
+  var elWa = document.getElementById('waFloat');
+  var quadroAgendado = false;
+
+  function aplicarScroll() {
+    quadroAgendado = false;
     var y = window.scrollY || window.pageYOffset;
     var max = document.documentElement.scrollHeight - window.innerHeight;
     /* durante o efeito elástico (topo/fim) o navegador reporta valores fora da faixa:
@@ -547,12 +563,17 @@
       nav.classList.toggle('is-hidden', delta > 0 && yc > 420);
     }
     if (Math.abs(delta) > 2) lastY = yc;
-    var p = document.getElementById('progress');
-    if (p) p.style.transform = 'scaleX(' + (max > 0 ? yc / max : 0) + ')';
-    var wa = document.getElementById('waFloat');
-    if (wa) wa.classList.toggle('is-in', yc > 600);
+    if (elProgresso) elProgresso.style.transform = 'scaleX(' + (max > 0 ? yc / max : 0) + ')';
+    if (elWa) elWa.classList.toggle('is-in', yc > 600);
+  }
+
+  function onScroll() {
+    if (quadroAgendado) return;
+    quadroAgendado = true;
+    requestAnimationFrame(aplicarScroll);
   }
   window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 
   function toggleDrawer(force) {
     var open = typeof force === 'boolean' ? force : !drawer.classList.contains('is-open');
