@@ -1,4 +1,7 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
+  type ReactNode,
+} from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { limparCacheDeLeitura } from '../ui/kit';
@@ -96,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { alive = false; window.clearTimeout(limite); sub.subscription.unsubscribe(); };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (error) {
       throw new Error(
@@ -105,26 +108,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           : error.message
       );
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     /* O cache de leitura é compartilhado entre as telas e vive no módulo.
        Sem limpar aqui, quem entrasse depois na mesma aba veria por um
        instante os dados do usuário anterior. */
     limparCacheDeLeitura();
     await supabase.auth.signOut();
-  };
+  }, []);
 
-  const role = profile?.role ?? null;
-  const isOwner = role === 'owner';
-  const isStaff = role === 'owner' || role === 'admin';
-  const isBarber = role === 'barber';
-  const can = (p: AdminPermission) =>
-    isOwner ? true : role === 'admin' ? Boolean(profile?.permissions?.[p]) : false;
+  /* O valor do contexto era um objeto literal novo em cada render, e `can`
+     era uma função nova junto. Todo consumidor de useAuth — o Shell, o
+     componente de rotas, os guardas de permissão e as telas — era obrigado
+     a re-renderizar mesmo quando papel e permissões não tinham mudado. */
+  const valor = useMemo<Ctx>(() => {
+    const role = profile?.role ?? null;
+    const isOwner = role === 'owner';
+    return {
+      session,
+      profile,
+      barber,
+      loading,
+      signIn,
+      signOut,
+      isOwner,
+      isStaff: role === 'owner' || role === 'admin',
+      isBarber: role === 'barber',
+      can: (p: AdminPermission) =>
+        isOwner ? true : role === 'admin' ? Boolean(profile?.permissions?.[p]) : false,
+    };
+  }, [session, profile, barber, loading, signIn, signOut]);
 
-  return (
-    <AuthCtx.Provider value={{ session, profile, barber, loading, signIn, signOut, can, isOwner, isStaff, isBarber }}>
-      {children}
-    </AuthCtx.Provider>
-  );
+  return <AuthCtx.Provider value={valor}>{children}</AuthCtx.Provider>;
 }
