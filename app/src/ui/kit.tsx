@@ -75,25 +75,111 @@ export function Banner({ tone, children }: { tone?: 'warn' | 'bad'; children: Re
 }
 
 /* ------------------------------------------------------- data hooks ---- */
+
+/**
+ * Cache de leitura compartilhado entre as telas.
+ *
+ * Antes, `useAsync` não guardava nada: cada montagem era uma busca fria e
+ * `setLoading(true)` apagava o que já estava na tela. Trocar a aba de
+ * Comandas, mudar o período do Dashboard ou simplesmente voltar para uma
+ * tela já vista refazia tudo mostrando um spinner no lugar do conteúdo.
+ *
+ * A estratégia aqui é stale-while-revalidate com validade zero: o que está
+ * em cache aparece na hora E uma nova consulta sempre sai em segundo plano.
+ * Então nada fica velho — a diferença em relação a antes é só que o usuário
+ * vê o dado anterior enquanto o novo chega, em vez de ver um spinner. Isso
+ * também evita precisar invalidar cache depois de gravar: a revalidação de
+ * toda montagem já faz esse papel.
+ *
+ * A chave é o código-fonte da função mais as dependências. Duas telas que
+ * fazem exatamente a mesma consulta compartilham a entrada de propósito —
+ * é o que tira as buscas repetidas de `barbers` e `services`, pedidas hoje
+ * em sete telas diferentes.
+ */
+interface EntradaCache {
+  dados: unknown;
+  quando: number;
+  voo: Promise<unknown> | null;
+}
+const cacheLeitura = new Map<string, EntradaCache>();
+
+/** Esquece tudo o que está em cache. Usado no logout. */
+export function limparCacheDeLeitura() {
+  cacheLeitura.clear();
+}
+
+interface EstadoAsync<T> {
+  chave: string;
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+}
+
 export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const chave = fn.toString() + '|' + JSON.stringify(deps);
   const [nonce, setNonce] = useState(0);
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
-  useEffect(() => {
-    let alive = true;
-    setLoading(true); setError(null);
-    fn()
-      .then((d) => { if (alive) { setData(d); setError(null); } })
-      .catch((e: unknown) => { if (alive) setError(e instanceof Error ? e.message : String(e)); })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, nonce]);
+  const inicial = (k: string): EstadoAsync<T> => {
+    const g = cacheLeitura.get(k);
+    return { chave: k, data: (g?.dados as T) ?? null, loading: g === undefined, error: null };
+  };
+  const [estado, setEstado] = useState<EstadoAsync<T>>(() => inicial(chave));
 
-  return { data, loading, error, reload, setData };
+  /* Dependências mudaram: reposiciona o estado já neste render, com o que
+     houver em cache para a chave nova. É o padrão de estado derivado da
+     documentação do React — re-renderiza antes de pintar, sem piscar. */
+  let atual = estado;
+  if (estado.chave !== chave) {
+    atual = inicial(chave);
+    setEstado(atual);
+  }
+
+  const setData = useCallback((d: T | null) => {
+    cacheLeitura.set(chave, { dados: d, quando: Date.now(), voo: null });
+    setEstado((e) => (e.chave === chave ? { ...e, data: d, loading: false, error: null } : e));
+  }, [chave]);
+
+  useEffect(() => {
+    let vivo = true;
+    const guardado = cacheLeitura.get(chave);
+
+    // Só mostra spinner quando não há absolutamente nada para mostrar.
+    if (guardado === undefined) {
+      setEstado((e) => (e.chave === chave && !e.loading ? { ...e, loading: true } : e));
+    }
+
+    /* Se já existe uma consulta igual no ar, aproveita a mesma promessa em
+       vez de disparar outra — duas telas montando juntas pedem uma vez. */
+    const promessa = guardado?.voo ?? (fn() as Promise<unknown>);
+    if (guardado) guardado.voo = promessa;
+    else cacheLeitura.set(chave, { dados: undefined, quando: 0, voo: promessa });
+
+    promessa
+      .then((d) => {
+        const e = cacheLeitura.get(chave);
+        if (e) { e.dados = d; e.quando = Date.now(); e.voo = null; }
+        if (vivo) setEstado((st) => (st.chave === chave ? { ...st, data: d as T, loading: false, error: null } : st));
+      })
+      .catch((err: unknown) => {
+        const e = cacheLeitura.get(chave);
+        if (e) {
+          e.voo = null;
+          // falha sem nada em cache: tira a entrada vazia para a próxima tentar de novo
+          if (e.dados === undefined) cacheLeitura.delete(chave);
+        }
+        if (vivo) {
+          setEstado((st) => (st.chave === chave
+            ? { ...st, loading: false, error: err instanceof Error ? err.message : String(err) }
+            : st));
+        }
+      });
+
+    return () => { vivo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chave, nonce]);
+
+  return { data: atual.data, loading: atual.loading, error: atual.error, reload, setData };
 }
 
 /** Envolve um submit: trava o botão, captura erro e devolve o estado. */

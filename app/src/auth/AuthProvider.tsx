@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { limparCacheDeLeitura } from '../ui/kit';
 import type { Profile, Barber, AdminPermission } from '../lib/types';
 
 /* Colunas pedidas de forma explícita. Com `select('*')` o PostgREST devolve
@@ -106,7 +107,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signOut = async () => { await supabase.auth.signOut(); };
+  const signOut = async () => {
+    /* O cache de leitura é compartilhado entre as telas e vive no módulo.
+       Sem limpar aqui, quem entrasse depois na mesma aba veria por um
+       instante os dados do usuário anterior. */
+    limparCacheDeLeitura();
+    await supabase.auth.signOut();
+  };
 
   const role = profile?.role ?? null;
   const isOwner = role === 'owner';
