@@ -217,76 +217,88 @@
   <div class="container">
     <div class="section-head center">
       <p class="eyebrow is-center" data-rv="fade-u">Agendamento</p>
-      <h2 class="sec-title chrome" data-rv="fade-u">Reserve seu horário</h2>
+      <h2 class="sec-title chrome" data-rv="fade-u">Agende seu horário</h2>
       <p class="lead" data-rv="fade-u" id="agendarSub">Escolha o serviço, o profissional, a data e o horário. Em seguida a barbearia confirma com você.</p>
     </div>
 
     <div class="demo-note" data-rv="fade-u" id="protoNote">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
-      <span><b>Protótipo de interface.</b> Esta é a demonstração visual do fluxo de agendamento. Os horários disponíveis e a confirmação virão da integração com o sistema de agendamento da barbearia — nada é reservado por aqui.</span>
+      <span><b>Sem conexão com o sistema de agendamento.</b> Não foi possível carregar os horários agora. Tente novamente em instantes ou fale com a barbearia pelo WhatsApp.</span>
     </div>
 
     <div class="book" data-rv="fade-u">
-      <div class="book-steps" id="bookSteps">
-        <button class="bstep is-on" data-step="0" type="button"><b>01</b>Serviço</button>
-        <button class="bstep" data-step="1" type="button"><b>02</b>Profissional</button>
-        <button class="bstep" data-step="2" type="button"><b>03</b>Data</button>
-        <button class="bstep" data-step="3" type="button"><b>04</b>Horário</button>
-        <button class="bstep" data-step="4" type="button"><b>05</b>Revisão</button>
+
+      <div class="book-top">
+        <p class="book-top-t">Agende seu horário</p>
+        <div class="book-hours" id="bookHours" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span><b>Atendimento</b><i data-site="contato.horarios"></i></span>
+        </div>
       </div>
-      <div class="book-body">
-        <div class="book-pane is-on" data-pane="0">
-          <p class="book-h">Escolha o serviço</p>
-          <div class="opt-grid" id="bookServices"></div>
-        </div>
-        <div class="book-pane" data-pane="1">
-          <p class="book-h">Escolha o profissional</p>
-          <div class="opt-grid" id="bookPros"></div>
-        </div>
-        <div class="book-pane" data-pane="2">
-          <p class="book-h">Escolha a data</p>
+
+      <ol class="steps" id="bookSteps">
+        <li class="step is-on" data-step="0"><i>1</i><span><b>Serviço</b><em>Escolha o serviço</em></span></li>
+        <li class="step" data-step="1"><i>2</i><span><b>Barbeiro</b><em>Escolha o profissional</em></span></li>
+        <li class="step" data-step="2"><i>3</i><span><b>Data e hora</b><em>Selecione data e horário</em></span></li>
+        <li class="step" data-step="3"><i>4</i><span><b>Confirmar</b><em>Revise e confirme</em></span></li>
+      </ol>
+
+      <div class="book-cols">
+
+        <section class="bcol" aria-labelledby="hServico">
+          <p class="bcol-h" id="hServico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg>
+            Escolha o serviço
+          </p>
+          <div class="bcol-body" id="bookServices"></div>
+        </section>
+
+        <section class="bcol" aria-labelledby="hBarbeiro">
+          <p class="bcol-h" id="hBarbeiro">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+            Escolha o barbeiro
+          </p>
+          <div class="bcol-body" id="bookPros"></div>
+        </section>
+
+        <section class="bcol" aria-labelledby="hData">
+          <p class="bcol-h" id="hData">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+            Escolha a data
+          </p>
           <div class="cal" id="cal"></div>
-        </div>
-        <div class="book-pane" data-pane="3">
-          <p class="book-h">Escolha o horário</p>
-          <div id="slotsPane">
-            <div class="slots-locked">
-              <span class="lock-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Aguardando integração</span>
-              <div class="sk" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-              <p>A grade de horários será carregada pelo sistema de agendamento da barbearia.</p>
-            </div>
-          </div>
-        </div>
-        <div class="book-pane" data-pane="4">
-          <p class="book-h">Revise seu agendamento</p>
+          <p class="bcol-h bcol-h--mt">Escolha o horário</p>
+          <div id="slotsPane"><p class="slot-state">Escolha serviço, profissional e data para ver os horários livres.</p></div>
+        </section>
+
+        <section class="bcol bcol--sum" aria-labelledby="hResumo">
+          <p class="bcol-h" id="hResumo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
+            Resumo do agendamento
+          </p>
           <div class="summary">
             <div class="srow"><span>Serviço</span><b class="empty" id="sumService">Não selecionado</b></div>
-            <div class="srow"><span>Duração</span><b class="empty" id="sumDuration">—</b></div>
-            <div class="srow"><span>Valor</span><b class="empty" id="sumPrice">—</b></div>
-            <div class="srow"><span>Profissional</span><b class="empty" id="sumPro">Não selecionado</b></div>
+            <div class="srow"><span>Barbeiro</span><b class="empty" id="sumPro">Não selecionado</b></div>
             <div class="srow"><span>Data</span><b class="empty" id="sumDate">Não selecionada</b></div>
-            <div class="srow"><span>Horário</span><b class="empty" id="sumTime">Via sistema de agendamento</b></div>
+            <div class="srow"><span>Horário</span><b class="empty" id="sumTime">Não selecionado</b></div>
+            <div class="srow"><span>Duração</span><b class="empty" id="sumDuration">—</b></div>
           </div>
-          <div id="reviewNote" class="demo-note" style="margin-bottom:0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 6 9 17l-5-5"/></svg>
-            <span>Estrutura pronta para integração. Enquanto isso, o contato direto por WhatsApp segue disponível.</span>
+          <div class="sum-total"><span>Total</span><b class="empty" id="sumPrice">—</b></div>
+
+          <div id="confirmBox" class="form-mini">
+            <label><span>Seu nome</span><input id="bkName" class="bk-inp" type="text" autocomplete="name" placeholder="Nome completo"></label>
+            <label><span>WhatsApp</span><input id="bkPhone" class="bk-inp" type="tel" inputmode="tel" autocomplete="tel" placeholder="(51) 90000-0000"></label>
           </div>
-          <div id="confirmBox" class="hide-when-offline" hidden>
-            <div class="form-mini">
-              <label><span>Seu nome</span><input id="bkName" class="bk-inp" type="text" autocomplete="name" placeholder="Nome completo"></label>
-              <label><span>WhatsApp</span><input id="bkPhone" class="bk-inp" type="tel" autocomplete="tel" placeholder="(51) 90000-0000"></label>
-            </div>
-            <p id="bkMsg" class="bk-msg" hidden></p>
-          </div>
-        </div>
-        <div class="book-foot">
-          <button class="btn btn--ghost btn--sm" id="bookPrev" type="button">Voltar</button>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <a class="btn btn--sm" href="https://wa.me/5551984546144" target="_blank" rel="noopener">Falar no WhatsApp</a>
-            <button class="btn btn--solid btn--sm" id="bookNext" type="button">Avançar</button>
-            <button class="btn btn--solid btn--sm" id="bookConfirm" type="button" hidden>Confirmar agendamento</button>
-          </div>
-        </div>
+          <p id="bkMsg" class="bk-msg" hidden></p>
+
+          <button class="btn btn--solid btn--block" id="bookConfirm" type="button" disabled>Confirmar agendamento</button>
+          <p class="sum-safe">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            Seus dados ficam só com a barbearia.
+          </p>
+          <a class="btn btn--ghost btn--block btn--sm" href="https://wa.me/5551984546144" target="_blank" rel="noopener">Prefere falar no WhatsApp?</a>
+        </section>
+
       </div>
     </div>
   </div>

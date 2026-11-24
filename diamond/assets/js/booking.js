@@ -52,6 +52,11 @@
         return out;
       });
     },
+    /** Dias e horários em que a casa abre. Usado para apagar do calendário
+        os dias fechados, em vez de oferecer um dia e devolver grade vazia. */
+    hours: function () {
+      return api('/business_hours?select=weekday,opens,closes,closed&order=weekday');
+    },
     /** Fotos da galeria publicadas pelo painel. */
     gallery: function () {
       return api('/gallery_images?select=url,caption&active=eq.true&order=order_index');

@@ -284,12 +284,13 @@
   /* ---------- dados ao vivo (quando o Supabase estiver configurado) ---------- */
   function hydrateFromDb() {
     if (!BK.online) return Promise.resolve(false);
-    return Promise.all([BK.services(), BK.barbers(), BK.content(), BK.gallery()])
+    return Promise.all([BK.services(), BK.barbers(), BK.content(), BK.gallery(), BK.hours()])
       .then(function (res) {
         LIVE.services = res[0];
         LIVE.barbers  = res[1];
         LIVE.content  = res[2];
         LIVE.gallery  = res[3];
+        LIVE.hours    = res[4];
         return true;
       })
       .catch(function (e) {
@@ -661,7 +662,7 @@
      ------------------------------------------------------------------ */
   var state = { service: null, pro: null, date: null, time: null, step: 0 };
   var BK = window.DiamondBooking || { online: false };
-  var LIVE = { services: null, barbers: null, content: null, gallery: null };
+  var LIVE = { services: null, barbers: null, content: null, gallery: null, hours: null };
 
   var bookServices = document.getElementById('bookServices');
   if (bookServices) {
@@ -693,12 +694,12 @@
   function selService(i) {
     state.service = i; state.time = null;
     bookServices.querySelectorAll('.opt').forEach(function (o, k) { o.classList.toggle('is-sel', k === i); });
-    updateSummary();
+    updateSummary(); renderSlots();
   }
   function selPro(i) {
     state.pro = i; state.time = null;
     bookPros.querySelectorAll('.opt').forEach(function (o, k) { o.classList.toggle('is-sel', k === i); });
-    updateSummary();
+    updateSummary(); renderSlots();
   }
 
   /* calendário real (datas), sem qualquer disponibilidade inventada */
@@ -706,6 +707,14 @@
   var DOW = ['D','S','T','Q','Q','S','S'];
   var today = new Date(); today.setHours(0, 0, 0, 0);
   var view = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  /* true quando a casa não abre nesse dia da semana. Sem o horário
+     carregado, não chuta: considera aberto e deixa o servidor decidir. */
+  function fechadoNoDia(d) {
+    if (!LIVE.hours || !LIVE.hours.length) return false;
+    var h = LIVE.hours.filter(function (x) { return x.weekday === d.getDay(); })[0];
+    return Boolean(h && h.closed);
+  }
 
   function renderCal() {
     var el = document.getElementById('cal'); if (!el) return;
@@ -723,10 +732,14 @@
     for (var d = 1; d <= days; d++) {
       var dt = new Date(y, m, d);
       var past = dt < today;
+      var fechado = fechadoNoDia(dt);
+      var bloqueado = past || fechado;
       var sel = state.date && dt.getTime() === state.date.getTime();
       var isToday = dt.getTime() === today.getTime();
-      h += '<button class="cal-day' + (past ? ' is-off' : '') + (sel ? ' is-sel' : '') + (isToday ? ' is-today' : '') +
-           '" type="button"' + (past ? ' disabled' : ' data-day="' + d + '"') + '>' + d + '</button>';
+      h += '<button class="cal-day' + (bloqueado ? ' is-off' : '') + (sel ? ' is-sel' : '') +
+           (isToday ? ' is-today' : '') + '" type="button"' +
+           (fechado && !past ? ' title="Fechado neste dia"' : '') +
+           (bloqueado ? ' disabled' : ' data-day="' + d + '"') + '>' + d + '</button>';
     }
     el.innerHTML = h + '</div>';
   }
@@ -740,7 +753,7 @@
       if (dd) {
         state.date = new Date(view.getFullYear(), view.getMonth(), +dd.dataset.day);
         state.time = null;
-        renderCal(); updateSummary();
+        renderCal(); updateSummary(); renderSlots();
       }
     });
   }
@@ -757,8 +770,10 @@
       : live ? LIVE.services[state.service] : SERVICES[state.service];
     set('sumService', s ? (live ? s.name : s.n) : '');
     set('sumDuration', s ? (live ? s.duration_min + ' minutos' : s.d) : '');
+    /* O total é o valor que o servidor grava no agendamento, então aqui é
+       exato — o "a partir de" continua na lista de serviços. */
     set('sumPrice', s
-      ? 'A partir de R$ ' + (live ? Number(s.price).toFixed(2).replace('.', ',') : s.p)
+      ? 'R$ ' + (live ? Number(s.price).toFixed(2).replace('.', ',') : s.p)
       : '');
     set('sumPro', state.pro == null ? ''
       : live ? LIVE.barbers[state.pro].display_name
@@ -768,14 +783,20 @@
       ? state.date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
       : '');
     set('sumTime', state.time ? fmtHour(state.time) : '');
+    syncSteps();
   }
   ['sumService','sumDuration','sumPrice','sumPro','sumDate','sumTime'].forEach(function (id) {
     var el = document.getElementById(id); if (el) el.dataset.ph = el.textContent;
   });
 
   /* ---------- grade de horários ---------- */
+  /* O horário é sempre o da barbearia, não o do aparelho de quem acessa.
+     Sem fixar o fuso, quem abrisse o site fora do Brasil — ou com o relógio
+     em outro fuso — veria 12:00 no lugar de 09:00, e agendaria errado. */
+  var FUSO = 'America/Sao_Paulo';
   function fmtHour(iso) {
-    return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return new Date(iso).toLocaleTimeString('pt-BR',
+      { hour: '2-digit', minute: '2-digit', timeZone: FUSO });
   }
 
   function renderSlots() {
@@ -783,7 +804,9 @@
     if (!pane) return;
 
     if (!BK.online || !LIVE.services) {
-      return; // mantém o aviso de "aguardando integração"
+      pane.innerHTML = '<p class="slot-state">Não foi possível falar com o sistema de ' +
+        'agendamento. Recarregue a página ou fale no WhatsApp.</p>';
+      return;
     }
     if (state.service == null || state.pro == null || !state.date) {
       pane.innerHTML = '<p class="slot-state">Escolha serviço, profissional e data para ver os horários livres.</p>';
@@ -872,60 +895,83 @@
       });
   }
 
-  function goStep(n) {
-    state.step = Math.max(0, Math.min(4, n));
-    document.querySelectorAll('.book-pane').forEach(function (p) {
-      p.classList.toggle('is-on', +p.dataset.pane === state.step);
-    });
-    document.querySelectorAll('.bstep').forEach(function (b, i) {
-      b.classList.toggle('is-on', i === state.step);
-      b.classList.toggle('is-done', i < state.step);
-    });
-    var prev = document.getElementById('bookPrev'), next = document.getElementById('bookNext');
-    var confirm = document.getElementById('bookConfirm');
-    var box = document.getElementById('confirmBox');
-    var note = document.getElementById('reviewNote');
-    prev.style.visibility = state.step === 0 ? 'hidden' : 'visible';
+  /* As quatro colunas ficam visíveis o tempo todo, como na referência: a
+     barra de cima deixou de navegar entre abas e passou a só indicar em que
+     ponto o visitante está. O progresso é deduzido do que já foi escolhido,
+     não de um contador próprio — assim nunca fica fora de sincronia. */
+  function etapaAtual() {
+    if (state.service == null) return 0;
+    if (state.pro == null) return 1;
+    if (!state.date || !state.time) return 2;
+    return 3;
+  }
 
-    var live = BK.online && LIVE.services;
-    if (state.step === 3) renderSlots();
+  /* marca as listas que realmente transbordam, para só nelas aparecer o
+     esmaecido que indica "tem mais coisa abaixo" */
+  function marcarRolagem() {
+    document.querySelectorAll('.bcol-body').forEach(function (el) {
+      el.classList.toggle('tem-mais', el.scrollHeight - el.clientHeight > 4);
+    });
+  }
 
-    if (state.step === 4) {
-      next.hidden = true;
-      if (live) {
-        if (confirm) confirm.hidden = false;
-        if (box) box.hidden = false;
-        if (note) note.hidden = true;
-      } else {
-        next.hidden = false;
-        next.textContent = 'Aguardando integração';
-        next.disabled = true;
+  /* No celular as colunas viram pilha e a lista de 15 serviços empurrava os
+     barbeiros para muito abaixo. Mostra os cinco primeiros e um botão para
+     abrir o resto — mesma saída da referência, e sem rolagem dentro de
+     rolagem, que no toque é ruim. */
+  var LIMITE_MOVEL = 5;
+  function limitarNoMovel() {
+    var movel = window.matchMedia('(max-width:720px)').matches;
+    document.querySelectorAll('.bcol-body').forEach(function (el) {
+      var itens = el.querySelectorAll('.opt');
+      var botao = el.parentElement.querySelector('.ver-todos');
+      var precisa = movel && itens.length > LIMITE_MOVEL;
+
+      el.classList.toggle('limitado', precisa && !el.classList.contains('aberto'));
+      if (!precisa) {
+        el.classList.remove('aberto');
+        if (botao) botao.remove();
+        return;
       }
-    } else {
-      next.hidden = false;
-      next.disabled = false;
-      next.textContent = 'Avançar';
-      if (confirm) confirm.hidden = true;
-      if (box) box.hidden = true;
-      if (note) note.hidden = false;
+      if (!botao) {
+        botao = document.createElement('button');
+        botao.type = 'button';
+        botao.className = 'ver-todos';
+        botao.addEventListener('click', function () {
+          el.classList.toggle('aberto');
+          el.classList.toggle('limitado', !el.classList.contains('aberto'));
+          botao.textContent = el.classList.contains('aberto')
+            ? 'Ver menos' : 'Ver todos os ' + itens.length;
+        });
+        el.parentElement.appendChild(botao);
+      }
+      botao.textContent = el.classList.contains('aberto')
+        ? 'Ver menos' : 'Ver todos os ' + itens.length;
+    });
+  }
+  window.addEventListener('resize', limitarNoMovel);
+  window.addEventListener('resize', marcarRolagem);
+
+  function syncSteps() {
+    var n = etapaAtual();
+    state.step = n;
+    document.querySelectorAll('.step').forEach(function (el, i) {
+      el.classList.toggle('is-on', i === n);
+      el.classList.toggle('is-done', i < n);
+    });
+    var btn = document.getElementById('bookConfirm');
+    if (btn) {
+      var live = BK.online && LIVE.services && LIVE.barbers;
+      btn.disabled = !(live && n === 3);
     }
   }
-  document.getElementById('bookPrev').addEventListener('click', function () { goStep(state.step - 1); });
-  document.getElementById('bookNext').addEventListener('click', function () { goStep(state.step + 1); });
-  var confirmBtn = document.getElementById('bookConfirm');
-  if (confirmBtn) confirmBtn.addEventListener('click', confirmBooking);
-  document.getElementById('bookSteps').addEventListener('click', function (e) {
-    var b = e.target.closest('.bstep'); if (b) goStep(+b.dataset.step);
-  });
-  goStep(0);
 
   /* atalhos vindos dos cards */
   document.addEventListener('click', function (e) {
     var sBtn = e.target.closest('[data-book-service]');
     var pBtn = e.target.closest('[data-book-pro]');
     if (!sBtn && !pBtn) return;
-    if (sBtn) { selService(+sBtn.dataset.bookService); goStep(1); }
-    if (pBtn) { selPro(+pBtn.dataset.bookPro); goStep(2); }
+    if (sBtn) selService(+sBtn.dataset.bookService);
+    if (pBtn) selPro(+pBtn.dataset.bookPro);
     document.getElementById('agendar').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
   });
 
@@ -977,12 +1023,17 @@
       }
       if (LIVE.barbers && bookPros) {
         bookPros.innerHTML = LIVE.barbers.map(function (b, i) {
+          /* enquanto a foto não é enviada pelo painel, um círculo com as
+             iniciais — o lugar da imagem já fica certo e nada quebra quando
+             a foto chegar */
           var ft = b.photo_url
-            ? '<img src="' + b.photo_url + '" alt="" width="46" height="46" loading="lazy">' : '';
+            ? '<img src="' + b.photo_url + '" alt="" width="46" height="46" loading="lazy">'
+            : '<span class="opt-ini" aria-hidden="true">' +
+              b.display_name.trim().slice(0, 2).toUpperCase() + '</span>';
           return '<button class="opt opt-pro" type="button" data-pro="' + i + '">' + ft +
             '<span style="display:flex;flex-direction:column;gap:3px;text-align:left">' +
             '<b>' + b.display_name + '</b>' +
-            '<span>' + (b.specialty || 'Profissional') + '</span></span></button>';
+            (b.specialty ? '<span>' + b.specialty + '</span>' : '') + '</span></button>';
         }).join('');
       }
       // o fluxo agenda de verdade agora: o aviso de protótipo não vale mais
@@ -992,8 +1043,17 @@
       applyContent();
       applyTeam();
       applyGallery();
+      /* a faixa de horário de atendimento só aparece se houver horário
+         cadastrado no painel — nada é escrito à mão aqui */
+      var faixa = document.getElementById('bookHours');
+      var txt = faixa && faixa.querySelector('[data-site]');
+      if (faixa && txt && txt.textContent.trim()) faixa.hidden = false;
+
       if (hasGSAP && window.ScrollTrigger) ScrollTrigger.refresh();
-      goStep(state.step);
+      renderSlots();
+      syncSteps();
+      marcarRolagem();
+      limitarNoMovel();
     });
     initStage();
     initReveals();

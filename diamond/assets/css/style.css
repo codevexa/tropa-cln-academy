@@ -77,6 +77,17 @@
   --ease:cubic-bezier(.22,.61,.36,1);
   --ease-out:cubic-bezier(.16,1,.3,1);
   --container:1240px;
+
+  /* Dourado, bronze e champagne. A paleta era monocromática — branco, aço e
+     cromo — e não tinha nenhum destaque quente. O dourado entra só em
+     acento: rótulos, contorno do que está escolhido e o botão principal.
+     Texto corrido e títulos continuam em branco/cromo, senão a página perde
+     a sobriedade e vira dourado demais. */
+  --gold:#c9a24a;
+  --champagne:#e8d2a0;
+  --bronze:#8a6a32;
+  --gold-soft:rgba(201,162,74,.10);
+  --gold-line:rgba(201,162,74,.42);
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -447,21 +458,142 @@ section{position:relative;z-index:2}
 
 /* ---------- Agendamento ---------- */
 .book{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(175deg,var(--panel-2),var(--panel) 55%);overflow:hidden}
-.book-steps{display:flex;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
-.book-steps::-webkit-scrollbar{display:none}
-.bstep{
-  flex:1 0 auto;min-width:118px;padding:16px 14px;text-align:center;position:relative;
-  font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted-2);
-  border-right:1px solid var(--line);transition:color .4s;
+
+/* ============================ AGENDAMENTO ============================
+   Quatro colunas visíveis ao mesmo tempo no desktop — serviço, barbeiro,
+   data com horário e resumo — em vez do assistente de cinco passos que
+   mostrava um de cada vez. No celular as colunas viram uma pilha, e a
+   faixa de barbeiros rola na horizontal, com alvos grandes para o dedo.
+   ===================================================================== */
+.book-top{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  padding:clamp(18px,3vw,26px) clamp(18px,3.4vw,30px);border-bottom:1px solid var(--line)}
+.book-top-t{font-family:'Oswald',sans-serif;font-size:clamp(1.05rem,2.3vw,1.35rem);
+  letter-spacing:.1em;text-transform:uppercase;font-weight:500;color:#fff;position:relative}
+.book-top-t::after{content:'';display:block;width:48px;height:2px;margin-top:9px;
+  background:linear-gradient(90deg,var(--gold),transparent)}
+.book-hours{display:flex;align-items:center;gap:11px;color:var(--muted)}
+.book-hours svg{width:26px;height:26px;flex:0 0 auto;stroke:var(--gold);opacity:.9}
+.book-hours span{display:flex;flex-direction:column;gap:2px;line-height:1.3}
+.book-hours b{font-family:'Oswald',sans-serif;font-size:.58rem;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--muted-2);font-weight:400}
+.book-hours i{font-style:normal;font-size:.84rem;color:#e7e8ea}
+
+/* ---- barra de etapas: indicador de progresso, não navegação em abas ---- */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;list-style:none;
+  padding:clamp(16px,2.6vw,22px) clamp(18px,3.4vw,30px);border-bottom:1px solid var(--line)}
+.step{display:flex;align-items:center;gap:12px;position:relative;padding-right:14px;min-width:0}
+.step:not(:last-child)::after{content:'';position:absolute;right:0;top:50%;width:14px;height:1px;
+  background:var(--line-2)}
+.step i{width:34px;height:34px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
+  font-family:'Oswald',sans-serif;font-style:normal;font-size:.82rem;font-weight:500;
+  border:1px solid var(--line-2);color:var(--muted-2);transition:.35s var(--ease-out)}
+.step span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.step b{font-family:'Oswald',sans-serif;font-size:.8rem;letter-spacing:.08em;font-weight:500;
+  color:var(--muted);transition:.35s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step em{font-style:normal;font-size:.68rem;color:var(--muted-2);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.step.is-on i{border-color:var(--gold);background:var(--gold);color:#120d04}
+.step.is-on b{color:#fff}
+.step.is-done i{border-color:rgba(201,162,74,.55);color:var(--gold)}
+.step.is-done b{color:#cfd2d7}
+
+/* ---- as quatro colunas ---- */
+.book-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr) minmax(0,1.05fr)}
+.bcol{padding:clamp(18px,2.6vw,24px);border-right:1px solid var(--line);min-width:0}
+.bcol:last-child{border-right:0}
+.bcol--sum{background:rgba(255,255,255,.015)}
+.bcol-h{display:flex;align-items:center;gap:9px;font-family:'Oswald',sans-serif;
+  text-transform:uppercase;font-size:.68rem;letter-spacing:.22em;color:#e7e8ea;margin-bottom:16px}
+.bcol-h svg{width:15px;height:15px;flex:0 0 auto;stroke:var(--gold)}
+.bcol-h--mt{margin-top:22px}
+.bcol-body{display:flex;flex-direction:column;gap:8px;max-height:330px;overflow-y:auto;
+  padding-right:4px;scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+.bcol-body::-webkit-scrollbar{width:4px}
+.bcol-body::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px}
+/* esmaece a última linha para deixar claro que a lista continua abaixo */
+.bcol-body{-webkit-mask:linear-gradient(#000 calc(100% - 26px),transparent);
+          mask:linear-gradient(#000 calc(100% - 26px),transparent)}
+.bcol-body:not(.tem-mais){-webkit-mask:none;mask:none}
+
+/* opção selecionada ganha o contorno dourado da referência */
+.bcol .opt{width:100%}
+.bcol .opt.is-sel{border-color:var(--gold);background:rgba(201,162,74,.09)}
+.bcol .opt.is-sel::after{content:'';position:absolute;top:50%;right:13px;transform:translateY(-50%);
+  width:17px;height:17px;border-radius:50%;background:var(--gold);
+  -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='11' fill='black' stroke='none'/><path d='m7 12.5 3.2 3.2L17 9'/></svg>") center/contain no-repeat;
+          mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='11' fill='black' stroke='none'/><path d='m7 12.5 3.2 3.2L17 9'/></svg>") center/contain no-repeat}
+.bcol .opt{position:relative;padding-right:40px}
+
+/* ---- resumo ---- */
+.bcol--sum .summary{margin-bottom:0;border-bottom:0}
+.sum-total{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:16px 18px;border:1px solid var(--line);border-top:0;margin-bottom:18px;
+  background:rgba(201,162,74,.06)}
+.sum-total span{font-family:'Oswald',sans-serif;font-size:.64rem;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--muted)}
+.sum-total b{font-family:'Oswald',sans-serif;font-size:1.22rem;letter-spacing:.04em;
+  font-weight:600;color:var(--gold)}
+.sum-total b.empty{color:var(--muted-2);font-weight:300;font-size:1rem}
+.bcol--sum .form-mini{grid-template-columns:1fr;margin-top:0;margin-bottom:14px}
+.btn--block{width:100%;justify-content:center}
+.sum-safe{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;
+  font-size:.72rem;color:var(--muted-2)}
+.sum-safe svg{width:13px;height:13px;flex:0 0 auto}
+.bcol--sum .btn--ghost{margin-top:12px}
+.bcol--sum .bk-msg{margin-top:0;margin-bottom:14px}
+
+/* ---- tablet: duas colunas ---- */
+@media (max-width:1080px){
+  .book-cols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .bcol{border-bottom:1px solid var(--line)}
+  .bcol:nth-child(2n){border-right:0}
+  .bcol:nth-last-child(-n+2){border-bottom:0}
+  .steps{grid-template-columns:repeat(2,1fr);gap:16px 0}
+  .step:nth-child(2n)::after{display:none}
 }
-.bstep:last-child{border-right:0}
-.bstep b{display:block;font-size:1.05rem;font-weight:600;letter-spacing:.06em;margin-bottom:5px;color:inherit}
-.bstep.is-on{color:#fff}
-.bstep.is-done{color:var(--steel)}
-.bstep.is-on::after{content:'';position:absolute;left:0;bottom:-1px;width:100%;height:1px;background:linear-gradient(90deg,transparent,#fff,transparent)}
+
+/* ---- celular: pilha, faixa de barbeiros na horizontal, alvos grandes ---- */
+@media (max-width:720px){
+  .book-cols{grid-template-columns:1fr}
+  .bcol{border-right:0;border-bottom:1px solid var(--line)}
+  .bcol:last-child{border-bottom:0}
+  .bcol-body{max-height:none;overflow:visible;padding-right:0;-webkit-mask:none;mask:none}
+  .bcol-body.limitado .opt:nth-child(n+6){display:none}
+  .ver-todos{width:100%;margin-top:10px;padding:13px;min-height:48px;
+    border:1px solid var(--gold-line);border-radius:var(--radius);background:transparent;
+    color:var(--champagne);font-family:'Oswald',sans-serif;text-transform:uppercase;
+    font-size:.68rem;letter-spacing:.18em;transition:.3s}
+  .ver-todos:hover,.ver-todos:focus-visible{background:var(--gold-soft)}
+  .book-top-t{font-size:1.05rem}
+  .book-hours{width:100%}
+
+  /* etapas viram pontos numerados, sem o texto de apoio */
+  .steps{grid-template-columns:repeat(4,1fr);gap:0;padding:16px 14px}
+  .step{flex-direction:column;gap:7px;text-align:center;padding-right:0}
+  .step em{display:none}
+  .step b{font-size:.66rem;letter-spacing:.04em;white-space:normal}
+  .step:not(:last-child)::after{right:-7px;top:17px;width:14px}
+
+  /* barbeiros: carrossel de avatares, como num aplicativo */
+  #bookPros{flex-direction:row;overflow-x:auto;gap:12px;padding-bottom:6px;
+    scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+  #bookPros::-webkit-scrollbar{height:3px}
+  #bookPros .opt{flex:0 0 auto;width:86px;flex-direction:column;align-items:center;gap:9px;
+    padding:12px 6px;text-align:center;scroll-snap-align:start}
+  #bookPros .opt img{width:58px;height:58px}
+  #bookPros .opt > span{align-items:center;text-align:center!important}
+  #bookPros .opt b{font-size:.72rem;letter-spacing:.03em}
+  #bookPros .opt span span,#bookPros .opt > span > span{display:none}
+  #bookPros .opt.is-sel::after{top:10px;right:10px;transform:none;width:15px;height:15px}
+
+  /* serviços e horários com área de toque confortável */
+  .bcol .opt{min-height:56px}
+  .slot{min-height:46px;font-size:.88rem}
+  .slot-grid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+  .bk-inp{min-height:48px}
+  .btn--block{min-height:52px}
+}
 .book-body{padding:clamp(22px,4vw,38px)}
-.book-pane{display:none}
-.book-pane.is-on{display:block;animation:paneIn .55s var(--ease-out)}
 @keyframes paneIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 .book-h{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:.72rem;letter-spacing:.3em;color:var(--muted);margin-bottom:20px}
 .opt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
@@ -490,22 +622,12 @@ section{position:relative;z-index:2}
 .cal-day.is-off{color:#2a2c2f;cursor:default;background:#070708}
 .cal-day.is-sel{background:#fff;color:#050505;font-weight:600}
 .cal-day.is-today{box-shadow:inset 0 0 0 1px var(--line-2)}
-.slots-locked{
-  border:1px dashed var(--line-2);border-radius:var(--radius);padding:26px 22px;text-align:center;
-  display:flex;flex-direction:column;align-items:center;gap:14px;
-}
-.slots-locked .sk{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;width:100%;max-width:470px}
-.slots-locked .sk i{height:38px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(100deg,rgba(255,255,255,.015),rgba(255,255,255,.06),rgba(255,255,255,.015));background-size:220% 100%;animation:sk 2.2s linear infinite}
 @keyframes sk{0%{background-position:160% 0}100%{background-position:-60% 0}}
-.slots-locked p{font-size:.82rem;color:var(--muted);max-width:52ch}
-.slots-locked .lock-t{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:.64rem;letter-spacing:.26em;color:var(--steel);display:flex;align-items:center;gap:9px}
-.slots-locked .lock-t svg{width:14px;height:14px}
 .summary{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:22px}
 .srow{background:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 18px}
 .srow span{font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.24em;color:var(--muted-2);text-transform:uppercase}
 .srow b{font-family:'Oswald',sans-serif;font-size:.92rem;letter-spacing:.07em;text-transform:uppercase;font-weight:500;text-align:right}
 .srow b.empty{color:var(--muted-2);font-weight:300}
-.book-foot{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
 .demo-note{display:flex;gap:11px;align-items:flex-start;padding:15px 18px;border:1px solid var(--line-2);border-radius:var(--radius);background:#0b0b0c;font-size:.82rem;color:var(--muted);margin-bottom:22px}
 .demo-note svg{width:16px;height:16px;flex:0 0 auto;margin-top:3px}
 .demo-note b{color:#fff;font-weight:500}
@@ -661,3 +783,44 @@ section{position:relative;z-index:2}
   background:linear-gradient(165deg,#17171a,#0b0b0c)}
 .member-sem-foto span{font-family:'Oswald',sans-serif;font-size:2.4rem;font-weight:600;
   letter-spacing:.1em;color:rgba(255,255,255,.22)}
+
+/* ===================== ACENTOS EM DOURADO =====================
+   Aplicados depois das regras de base, de propósito: assim o dourado é
+   uma camada por cima da identidade monocromática e dá para tirar sem
+   desmontar nada. */
+
+/* rótulos de seção e os fios ao lado deles */
+/* círculo com iniciais enquanto o profissional não tem foto no painel */
+.opt-ini{width:46px;height:46px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
+  border:1px solid var(--gold-line);background:var(--gold-soft);color:var(--champagne);
+  font-family:'Oswald',sans-serif;font-size:.84rem;letter-spacing:.06em}
+@media (max-width:720px){#bookPros .opt-ini{width:58px;height:58px;font-size:1rem}}
+
+.eyebrow{color:var(--champagne)}
+.eyebrow::before{background:linear-gradient(90deg,transparent,var(--gold))}
+.eyebrow.is-center::after{background:linear-gradient(90deg,var(--gold),transparent)}
+
+/* botão principal: o da referência é dourado cheio */
+.btn--solid{background:linear-gradient(100deg,var(--bronze),var(--gold) 38%,var(--champagne) 60%,var(--gold));
+  color:#140e03;border-color:var(--gold)}
+.btn--solid::before{background:#140e03}
+.btn--solid:hover,.btn--solid:focus-visible{color:var(--champagne);border-color:var(--champagne)}
+.btn--solid[disabled]{opacity:.42;cursor:not-allowed;filter:saturate(.5)}
+.btn--solid[disabled]:hover{color:#140e03}
+
+/* contorno dourado no botão de agendar do cabeçalho, como na referência */
+.nav-cta .btn{border-color:var(--gold-line);color:var(--champagne)}
+.nav-cta .btn:hover,.nav-cta .btn:focus-visible{color:#140e03;border-color:var(--gold)}
+.nav-cta .btn::before{background:linear-gradient(100deg,var(--gold),var(--champagne))}
+
+/* o que está escolhido no agendamento */
+.cal-day.is-sel{background:var(--gold);color:#140e03}
+.cal-day.is-today{box-shadow:inset 0 0 0 1px var(--gold-line)}
+/* o hover vinha depois e apagava o horário escolhido — :not(.is-sel) resolve */
+.slot:hover:not(.is-sel){border-color:var(--gold-line);background:var(--gold-soft)}
+.slot.is-sel,.slot.is-sel:hover{background:linear-gradient(100deg,var(--gold),var(--champagne) 55%,var(--gold));
+  color:#140e03;border-color:var(--gold);font-weight:600}
+
+/* fio dourado sob os títulos de seção centrados */
+.section-head.center .sec-title::after{content:'';display:block;width:64px;height:2px;
+  margin:18px auto 0;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
